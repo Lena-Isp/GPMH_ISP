@@ -19,7 +19,7 @@ watch(activeFilter, (value) => {
 })
 
 // Источником истины выбранных фильтров служит URL query
-const FILTER_GROUPS = ['assets', 'tags', 'years', 'months']
+const FILTER_GROUPS = ['assets', 'tag_id', 'years', 'months']
 
 function filtersFromQuery(query) {
   const result = {}
@@ -82,7 +82,7 @@ useHead({
   <div class="news-filter">
     <FilterItem name="Все" :active="activeFilter == null" />
     <FilterItem name="Активы" :active="activeFilter == 'assets'" @click="activeFilter = 'assets'" />
-    <FilterItem name="Теги" :active="activeFilter == 'tags'" @click="activeFilter = 'tags'" />
+    <FilterItem name="Теги" :active="activeFilter == 'tag_id'" @click="activeFilter = 'tag_id'" />
     <FilterItem name="Дата" :active="activeFilter == 'date'" @click="activeFilter = 'date'" />
   </div>
 

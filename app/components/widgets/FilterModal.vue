@@ -63,13 +63,13 @@ watch(activeFilter, () => {
             />
           </template>
         </div>
-        <div class="modal__filters" v-show="activeFilter == 'tags'">
+        <div class="modal__filters" v-show="activeFilter == 'tag_id'">
           <template v-for="(x, index) in modalTitle?.tags" :key="index">
             <Chips 
               :name="x?.name"
-              :active="isChipActive('tags', x.id)"
+              :active="isChipActive('tag_id', x.id)"
               :hoverColor="$color.C_2736"
-              @click="toggleChip('tags', x.id)"
+              @click="toggleChip('tag_id', x.id)"
             />
           </template>
         </div>
