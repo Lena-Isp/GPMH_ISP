@@ -1,0 +1,388 @@
+diff --git a/app/components/elements/Chips.vue b/app/components/elements/Chips.vue
+index ae006a9a..49e1fa41 100644
+--- a/app/components/elements/Chips.vue
++++ b/app/components/elements/Chips.vue
+@@ -2,12 +2,32 @@
+ const props = defineProps({
+   name: String,
+   link: String,
++  active: { type: Boolean, default: false },
+   hoverColor: { type: String, default: 'transparent' } 
+ });
+ </script>
+ 
+ <template>
+-<NuxtLinkLocale class="chips" :to="link" v-if="name" >
++<button
++  v-if="!link && name"
++  type="button"
++  class="chips"
++  :class="{ 'chips--active': active }"
++  :aria-pressed="active ? 'true' : 'false'"
++>
++  <Text
++    :variant="[$typographyVariant.T_SMALL_16_MOB, $typographyVariant.T_BIG_36]"
++    :font="$font.TTSMALLS_REGULAR"
++    :color="$color.WHITE"
++    class="chips__text"
++  > {{ name }}</Text>
++  <span class="chips__bg"
++    :style="{
++      'background-color': hoverColor
++    }"
++/>
++</button>
++<NuxtLinkLocale v-else-if="name" class="chips" :to="link">
+   <Text
+     :variant="[$typographyVariant.T_SMALL_16_MOB, $typographyVariant.T_BIG_36]"
+     :font="$font.TTSMALLS_REGULAR"
+@@ -32,11 +52,21 @@ const props = defineProps({
+   display: inline-block;
+   overflow: hidden;
+   text-transform: uppercase;
++  background: transparent;
++  color: inherit;
++  font: inherit;
++  cursor: pointer;
+   &:hover {
+     .chips__bg {
+       opacity: 1;
+     }
+   }
++  &--active {
++    border-color: var(--color-C_2101);
++    .chips__bg {
++      opacity: 1;
++    }
++  }
+ }
+ 
+ .chips__text {
+diff --git a/app/components/widgets/FilterModal.vue b/app/components/widgets/FilterModal.vue
+index c5191364..3369a70d 100644
+--- a/app/components/widgets/FilterModal.vue
++++ b/app/components/widgets/FilterModal.vue
+@@ -1,15 +1,46 @@
+ <script setup>
+ const props = defineProps({
+   modalTitle: Object,
++  appliedFilters: { type: Object, default: () => ({}) },
+ })
+ 
++const emit = defineEmits(['apply'])
++
+ const showModal = defineModel('show')
+ const activeFilter = defineModel('active')
+ 
++// Черновик выбранных значений: { assets: [id...], tags: [id...], years: [...], months: [...] }
++const draft = ref({})
++
++const isChipActive = (group, id) => (draft.value[group] || []).includes(id)
++
++// Мультивыбор: повторный клик по chip снимает его
++const toggleChip = (group, id) => {
++  const current = draft.value[group] || []
++  const next = current.includes(id)
++    ? current.filter((x) => x !== id)
++    : [...current, id]
++  draft.value = { ...draft.value, [group]: next }
++}
++
++const selectedCount = computed(() =>
++  Object.values(draft.value).reduce((sum, ids) => sum + (ids?.length || 0), 0)
++)
++
+ const closeModal = () => {
+   showModal.value = false
+   activeFilter.value = null
+ }
++
++const applyFilters = () => {
++  emit('apply', { ...draft.value })
++  closeModal()
++}
++
++// При открытии модалки подтягиваем уже применённые фильтры в черновик
++watch(activeFilter, () => {
++  draft.value = JSON.parse(JSON.stringify(props.appliedFilters ?? {}))
++}, { immediate: true })
+ </script>
+ 
+ <template>
+@@ -26,7 +57,9 @@ const closeModal = () => {
+           <template v-for="(x, index) in modalTitle?.partners" :key="index">
+             <Chips 
+               :name="x?.name"
++              :active="isChipActive('assets', x.id)"
+               :hoverColor="$color.C_2736"
++              @click="toggleChip('assets', x.id)"
+             />
+           </template>
+         </div>
+@@ -34,7 +67,9 @@ const closeModal = () => {
+           <template v-for="(x, index) in modalTitle?.tags" :key="index">
+             <Chips 
+               :name="x?.name"
++              :active="isChipActive('tags', x.id)"
+               :hoverColor="$color.C_2736"
++              @click="toggleChip('tags', x.id)"
+             />
+           </template>
+         </div>
+@@ -49,7 +84,9 @@ const closeModal = () => {
+           <template v-for="(x, index) in modalTitle.years" :key="index">
+             <Chips 
+               :name="x.name"
++              :active="isChipActive('years', x.id)"
+               :hoverColor="$color.C_2736"
++              @click="toggleChip('years', x.id)"
+             />
+           </template>
+           <div class="modal__month">
+@@ -62,13 +99,15 @@ const closeModal = () => {
+           <template v-for="(x, index) in modalTitle.months" :key="index">
+             <Chips 
+               :name="x.name"
++              :active="isChipActive('months', x.id)"
+               :hoverColor="$color.C_2736"
++              @click="toggleChip('months', x.id)"
+             />
+           </template>
+         </div>
+       </div>
+       <div class="modal__footer">
+-        <ButtonMore text="Применить" />
++        <ButtonMore :text="selectedCount > 0 ? `Применить (${selectedCount})` : 'Применить'" @click="applyFilters" />
+       </div>
+     </div>
+   </Transition>
+diff --git a/app/pages/media/index.vue b/app/pages/media/index.vue
+index 87ddab7c..98c8373c 100644
+--- a/app/pages/media/index.vue
++++ b/app/pages/media/index.vue
+@@ -1,6 +1,62 @@
+ <script setup>
+ const { locale } = useI18n()
++const route = useRoute()
++const router = useRouter()
+ const newsStore = useNewsStore()
++
++// URL query — источник истины фильтров: filter[partner_id][0]=1043&filter[partner_id][1]=4&page=1&per_page=6
++const PER_PAGE = 6
++const FILTER_GROUPS = ['assets', 'tags', 'years', 'months']
++
++// Ключи групп модалки → имена параметров API
++const FILTER_PARAM_MAP = {
++  assets: 'partner_id',
++  tags: 'tag_id',
++  years: 'year',
++  months: 'month',
++}
++
++// Разбирает query-параметры вида filter[partner_id][0] в { assets: [id...], ... }
++function filtersFromQuery(query) {
++  const byParam = {}
++  for (const key of Object.keys(query)) {
++    const m = key.match(/^filter\[(\w+)\]\[(\d+)\]$/)
++    if (!m) continue
++    const param = m[1]
++    const group = Object.keys(FILTER_PARAM_MAP).find((g) => FILTER_PARAM_MAP[g] === param)
++    if (!group) continue
++    ;(byParam[param] ||= []).push({ index: Number(m[2]), value: String(query[key]) })
++  }
++  const result = {}
++  for (const [param, items] of Object.entries(byParam)) {
++    const group = Object.keys(FILTER_PARAM_MAP).find((g) => FILTER_PARAM_MAP[g] === param)
++    result[group] = items.sort((a, b) => a.index - b.index).map((i) => i.value)
++  }
++  return result
++}
++
++// Собирает объект query для router.push в формате API
++function buildRouteQuery(filters, page = 1) {
++  const query = {}
++  for (const group of FILTER_GROUPS) {
++    const ids = filters[group]
++    if (Array.isArray(ids)) {
++      const param = FILTER_PARAM_MAP[group]
++      ids.forEach((id, i) => {
++        query[`filter[${param}][${i}]`] = String(id)
++      })
++    }
++  }
++  query.page = String(page)
++  query.per_page = String(PER_PAGE)
++  return query
++}
++
++const appliedFilters = ref(filtersFromQuery(route.query))
++
++// Синхронизируем стор с фильтрами из URL до первого запроса (SSR и прямые ссылки)
++newsStore.setFilters(appliedFilters.value)
++
+ // Загрузка данных для первых 6 новостей
+ const { newsList } = storeToRefs(newsStore)
+ await useAsyncData('initialNewsMedia', () => newsStore.fetchInitialNews())
+@@ -16,6 +72,24 @@ watch(activeFilter, (value) => {
+   isOpen.value = value !== null
+ })
+ 
++// Синхронизируем стор и список при изменении query (в т.ч. назад/вперёд, прямая ссылка)
++watch(
++  () => route.query,
++  async (query) => {
++    const next = filtersFromQuery(query)
++    const changed = JSON.stringify(next) !== JSON.stringify(appliedFilters.value)
++    appliedFilters.value = next
++    if (changed) {
++      await newsStore.applyFilters(next)
++    }
++  }
++)
++
++// Применение фильтров из модалки → обновляем URL (watch выше перезапросит данные)
++async function onApplyFilters(draft) {
++  await router.push({ query: buildRouteQuery(draft, 1) })
++}
++
+ useHead({
+   bodyAttrs: {
+     style: computed(() => isOpen.value ? 'overflow: hidden' : '')
+@@ -61,6 +135,8 @@ useHead({
+       v-model:show="isOpen"
+       v-model:active="activeFilter"
+       :modalTitle="newsListFilter"
++      :appliedFilters="appliedFilters"
++      @apply="onApplyFilters"
+     />
+   </ClientOnly>
+ </template>
+diff --git a/app/stores/news.js b/app/stores/news.js
+index fddea26a..59698b47 100644
+--- a/app/stores/news.js
++++ b/app/stores/news.js
+@@ -13,6 +13,40 @@ export const useNewsStore = defineStore('media', () => {
+   const perPage = 6
+   const hasMore = ref(true)
+   const isLoading = ref(false)
++  // Выбранные фильтры: { assets: [id...], tags: [id...], years: [...], months: [...] }
++  const activeFilters = ref({})
++
++  //---------------------------------------------- HELPERS ---------------------------------------------------------
++
++  // Ключи групп фильтров модалки → параметры API
++  const FILTER_PARAM_MAP = {
++    assets: 'partner_id',
++    tags: 'tag_id',
++    years: 'year',
++    months: 'month',
++  }
++
++  // Собирает строку фильтров в формате API: filter[partner_id][0]=1043&filter[partner_id][1]=4
++  function buildFilterQuery() {
++    const parts = []
++    for (const [group, ids] of Object.entries(activeFilters.value)) {
++      const param = FILTER_PARAM_MAP[group] ?? group
++      if (Array.isArray(ids)) {
++        ids.forEach((id, i) => {
++          parts.push(`filter%5B${param}%5D%5B${i}%5D=${encodeURIComponent(id)}`)
++        })
++      } else if (ids !== undefined && ids !== null && ids !== '') {
++        parts.push(`filter%5B${param}%5D=${encodeURIComponent(ids)}`)
++      }
++    }
++    return parts.length > 0 ? `&${parts.join('&')}` : ''
++  }
++
++  function resetPagination() {
++    newsList.value = []
++    currentPage.value = 2
++    hasMore.value = true
++  }
+   //---------------------------------------------- ACTIONS ---------------------------------------------------------
+   
+   async function fetchNewsBySlug(slug) {
+@@ -39,9 +73,14 @@ export const useNewsStore = defineStore('media', () => {
+     }
+   }
+ 
++  // Устанавливает выбранные фильтры (ключи групп модалки → списки id)
++  function setFilters(filters) {
++    activeFilters.value = { ...filters }
++  }
++
+   async function fetchInitialNews() {
+     if (newsList?.value?.length > 0) return newsList?.value
+-    const response = await get('/news?page=1&per_page=6')
++    const response = await get(`/news?page=1&per_page=${perPage}${buildFilterQuery()}`)
+     const payload = response?.data || response
+     newsList.value = payload
+     return payload
+@@ -59,22 +98,39 @@ export const useNewsStore = defineStore('media', () => {
+     // Не загружаем, если уже идёт загрузка или данных больше нет
+     if (isLoading.value || !hasMore.value) return { status: 'no_more' }
+ 
+-    const response = await get(
+-      `/news?page=${currentPage.value}&per_page=${perPage}`
+-    )
++    isLoading.value = true
++    try {
++      const response = await get(
++        `/news?page=${currentPage.value}&per_page=${perPage}${buildFilterQuery()}`
++      )
+ 
+-    if (response?.data) {
+-      // Добавляем новые данные к существующим
+-      newsList.value = [...newsList.value, ...response.data]
+-      // Проверяем, есть ли ещё страницы
+-      hasMore.value = response.data.length === perPage
+-      currentPage.value += 1
+-      return response.data
+-    } else {
+-      hasMore.value = false
+-      return []
++      if (response?.data) {
++        // Добавляем новые данные к существующим
++        newsList.value = [...newsList.value, ...response.data]
++        // Проверяем, есть ли ещё страницы
++        hasMore.value = response.data.length === perPage
++        currentPage.value += 1
++        return response.data
++      } else {
++        hasMore.value = false
++        return []
++      }
++    } finally {
++      isLoading.value = false
+     }
+   }
++
++  // Применяет выбранные фильтры и перезапрашивает первую страницу
++  async function applyFilters(filters) {
++    activeFilters.value = { ...filters }
++    resetPagination()
++    const response = await get(`/news?page=1&per_page=${perPage}${buildFilterQuery()}`)
++    const payload = response?.data ?? response
++    newsList.value = Array.isArray(payload) ? payload : []
++    hasMore.value = Array.isArray(payload) && payload.length === perPage
++    currentPage.value = 2
++    return payload
++  }
+   
+   async function fetchNewsFilters() {
+     if (Object.keys(newsListFilter.value).length > 0) return newsListFilter.value
+@@ -109,11 +165,14 @@ export const useNewsStore = defineStore('media', () => {
+     currentNews,
+     currentArticle,
+     isLoading,
++    activeFilters,
+     // actions
++    setFilters,
+     fetchInitialNews,
+     fetchInitialSlider,
+     fetchNewsFilters,
+     fetchMoreNews,
++    applyFilters,
+     fetchNewsBySlug,
+   }
+ })
