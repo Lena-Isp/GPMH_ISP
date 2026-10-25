@@ -1,0 +1,68 @@
+{
+  "lang": "Рус",
+  "menu": {
+    "about": "About us",
+    "aboutPriorities": "Strategic priorities", 
+    "aboutCsr": "CSR", 
+    "aboutCareer": "Career",
+    "aboutHistory": "History",
+    "business": "Business",
+    "businessAsset": "Holding assets",
+    "media": "News",
+    "mediaId": "NewsId",
+    "contacts": "Contacts",
+    "search": "Search",
+    "ui": "ui",
+    "uiFonts": "Fonts",
+    "uiTokens": "Tokens",
+    "uiElements": "Elements",
+    "uiWidgets": "Widgets"
+  },
+  "containerSplit": {
+    "tags": "Tags",
+    "soc": "Share"
+  },
+  "index": {
+    "name": "Page - Home"
+  },
+  "about": {
+    "name": "About us"
+  },
+  "career": {
+    "name": "Page - About"
+  },
+  "history": {
+    "name": "History"
+  },
+  "strategy": {
+    "name": "Page - Strategy"
+  },
+  "business": {
+    "header": "Holding assets"
+  },
+  "partnerId": {
+    "name": "Page - Holding assets",
+    "back": "Back to assets"
+  },
+  "contacts": {
+    "name": "Contacts"
+  },
+  "media": {
+    "name": "Page - Media"
+  },
+  "mediaId": {
+    "name": "Page - MediaId",
+    "back": "Back to news"
+  },
+  "search": {
+    "name": "Page - Search"
+  },
+  "error": {
+    "title": "An error occurred",
+    "statusError": "Error code",
+    "textButton": "Clear the error message in NUXT and return to the main page"
+  },
+  "pinia": {
+    "partners": "Federal TV channels"
+  }
+}

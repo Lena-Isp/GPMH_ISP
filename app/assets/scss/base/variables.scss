@@ -1,0 +1,29 @@
+@use "sass:math";
+@use "sass:map";
+
+//----VARIABLES----//
+$font-size-base: 16;
+$header-height-mob: 62;
+$header-height-desc: 92;
+
+//отступы для основного контейнера
+$offset-base-mob: 10;
+$offset-base-desc: 30;
+
+//отступы для дополнительного контейнера
+$offset-dop: 11;
+
+// swiper
+$swiper-theme-color: #2563eb;  // основной цвет (стрелки, пагинация)
+$swiper-pagination-color: $swiper-theme-color;
+$swiper-navigation-color: $swiper-theme-color;
+$swiper-navigation-size: 24px;
+
+// брейкпойнты для mobile-first
+$breakpoints: (
+  'desktop': 1051px, // Для экранов шире 1051px 
+  'full-hd': 1921px, // Для экранов шире 1920px 
+  'ultra-hd': 2561px, // Для экранов шире 2560px (4K и выше)
+  'wide-limit': 2639px // «заморозить» размер шрифта на этом брейкпоинте
+);
+

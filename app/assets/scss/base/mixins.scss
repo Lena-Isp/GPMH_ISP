@@ -1,0 +1,31 @@
+@use "sass:math";
+@use "sass:map";
+@use "../base/variables.scss" as *;
+
+//----MIXIN----//
+//миксин для медиазапросов
+@mixin mq($size) {
+  @media (min-width: map.get($breakpoints, $size)) {
+    @content;
+  }
+}
+
+//миксин для контейнера во всю ширину
+@mixin fluid($offset) {
+  margin-left: -#{$offset};
+  margin-right: -#{$offset};
+  width: calc(100% + (#{$offset} * 2));
+}
+
+//миксин для перевода пикселей в em
+@function em($pixels,$context:$font-size-base) {
+  @return math.div($pixels,$context)+em;
+}
+
+@mixin safari {
+  @media not all and (min-resolution: .001dpcm) {
+    @supports (-webkit-appearance: none) and (stroke-color: transparent) {
+      @content;
+    }
+  }
+}

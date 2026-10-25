@@ -1,0 +1,68 @@
+{
+  "lang": "Eng",
+  "menu": {
+    "about": "О нас",
+    "aboutPriorities": "Стратегические приоритеты",
+    "aboutCsr": "КСО", 
+    "aboutCareer": "Карьера",
+    "aboutHistory": "История",
+    "business": "Активы холдинга",
+    "businessAsset": "АктивID",
+    "media": "Новости",
+    "mediaId": "НовостиId",
+    "contacts": "Контакты",
+    "search": "Поиск",
+    "ui": "ui",
+    "uiFonts": "Fonts",
+    "uiTokens": "Tokens",
+    "uiElements": "Elements",
+    "uiWidgets": "Widgets"
+  },
+  "containerSplit": {
+    "tags": "Теги",
+    "soc": "Поделиться"
+  },
+  "index": {
+    "name": "Страница - Главная"
+  },
+  "about": {
+    "name": "О нас"
+  },
+  "career": {
+    "name": "Страница - Карьера"
+  },
+  "history": {
+    "name": "История «Газпром-Медиа Холдинга»"
+  },
+  "strategy": {
+    "name": "Страница - Стратегия"
+  },
+  "business": {
+    "header": "Активы холдинга"
+  },
+  "partnerId": {
+    "name": "Страница - Актив холдинга",
+    "back": "Назад к активам"
+  },
+  "contacts": {
+    "name": "Контакты"
+  },
+  "media": {
+    "name": "Страница - Новости"
+  },
+  "mediaId": {
+    "name": "Страница - НовостиId",
+    "back": "Назад к новостям"
+  },
+  "search": {
+    "name": "Страница - Поиск"
+  },
+  "error": {
+    "title": "Произошла ошибка",
+    "statusError": "Код ошибки",
+    "textButton": "Очистить стус ошибки в NUXT и вернуться на главную"
+  },
+  "pinia": {
+    "partners": "Федеральные телеканалы"
+  }
+}

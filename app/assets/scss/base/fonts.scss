@@ -1,0 +1,48 @@
+/* =====================================================================
+					            FONTS
+======================================================================== */
+@font-face {
+  font-family: 'TTSmallsRegular';
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+  src: url('@/assets/fonts/tt_smalls_regular.woff');
+  src: url('@/assets/fonts/tt_smalls_regular.woff2') format('woff2'),
+  url('@/assets/fonts/tt_smalls_regular.woff') format('woff'),
+}
+@font-face {
+  font-family: 'TTSmallsMedium';
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+  src: url('@/assets/fonts/tt_smalls_medium.woff');
+  src: url('@/assets/fonts/tt_smalls_medium.woff2') format('woff2'),
+  url('@/assets/fonts/tt_smalls_medium.woff') format('woff'),
+}
+@font-face {
+  font-family: 'TTSmallsDemibold';
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+  src: url('@/assets/fonts/tt_smalls_demibold.woff');
+  src: url('@/assets/fonts/tt_smalls_demibold.woff2') format('woff2'),
+  url('@/assets/fonts/tt_smalls_demibold.woff') format('woff'),
+}
+@font-face {
+  font-family: 'MaregrapheRegular';
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+  src: url('@/assets/fonts/maregraphe_caption_regular.woff');
+  src: url('@/assets/fonts/maregraphe_caption_regular.woff2') format('woff2'),
+  url('@/assets/fonts/maregraphe_caption_regular.woff') format('woff'),
+}
+@font-face {
+  font-family: 'MaregrapheBold';
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+  src: url('@/assets/fonts/maregraphe_caption_bold.woff');
+  src: url('@/assets/fonts/maregraphe_caption_bold.woff2') format('woff2'),
+  url('@/assets/fonts/maregraphe_caption_bold.woff') format('woff'),
+}

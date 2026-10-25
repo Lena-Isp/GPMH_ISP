@@ -1,0 +1,10 @@
+<svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M40 1V74" stroke="currentColor"/>
+  <mask id="path-2-inside-1_1702_10705" fill="white">
+    <path d="M40 80L6.94792e-07 40L40 1.38958e-06L80 40L40 80Z"/>
+  </mask>
+  <path 
+    d="M40 1.38958e-06L40.7071 -0.707105L40 -1.41421L39.2929 -0.707105L40 1.38958e-06ZM0.707107 40.7071L40.7071 0.707108L39.2929 -0.707105L-0.707106 39.2929L0.707107 40.7071ZM39.2929 0.707108L79.2929 40.7071L80.7071 39.2929L40.7071 -0.707105L39.2929 0.707108Z" 
+    fill="currentColor" 
+    mask="url(#path-2-inside-1_1702_10705)"/>
+</svg>

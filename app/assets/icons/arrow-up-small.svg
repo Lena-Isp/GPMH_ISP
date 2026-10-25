@@ -1,0 +1,11 @@
+<svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M79 0.999997L7 73" stroke="currentColor"/>
+  <mask id="path-2-inside-1_1232_4963" fill="white">
+    <path d="M0 80L-3.49691e-06 0L80 -3.49691e-06L80 80L0 80Z"/>
+  </mask>
+  <path 
+    d="M80 -3.49691e-06L81 -3.54062e-06L81 -1L80 -1L80 -3.49691e-06ZM-3.4532e-06 1L80 0.999997L80 -1L-3.54062e-06 -1L-3.4532e-06 1ZM79 -3.4532e-06L79 80L81 80L81 -3.54062e-06L79 -3.4532e-06Z" 
+    fill="currentColor" 
+    mask="url(#path-2-inside-1_1232_4963)"
+  />
+</svg>

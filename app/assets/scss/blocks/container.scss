@@ -1,0 +1,33 @@
+@use "~/assets/scss/base/mixins.scss" as *;
+@use "~/assets/scss/base/variables.scss" as *;
+
+.container-full {
+  @include fluid(em($offset-base-mob));
+  @include mq('desktop') {
+    @include fluid(em($offset-base-desc));
+  }
+}
+
+.container-full-under-header {
+  margin-top: em(-$header-height-mob);
+  position: relative;
+  z-index: 0;
+  @include fluid(em($offset-base-mob));
+  @include mq('desktop') {
+    margin-top: em(-$header-height-desc);
+    @include fluid(em($offset-base-desc));
+  }
+}
+
+.container-indent-left {
+  @include mq('desktop') {
+    margin-left: calc(630/1860 * 100%);
+  }
+}
+
+//отсуп в 11px (в десктопной версии, в мобильной 10px)
+.container-full-small {
+  @include mq('desktop') {
+    @include fluid(em($offset-base-desc - $offset-dop));
+  }
+}

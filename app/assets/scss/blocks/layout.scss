@@ -1,0 +1,26 @@
+@use "~/assets/scss/base/mixins.scss" as *;
+@use "~/assets/scss/base/variables.scss" as *;
+
+.layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  //min-height: 100dvh;
+  position: relative;
+  padding: 0 em($offset-base-mob) 0 em($offset-base-mob);
+  background-color: var(--color-FON);
+  color: var(--color-WHITE);
+  &--light {
+    background-color: var(--color-WHITE ) ;
+    color: var(--color-BLACK);
+  }
+  @include mq('desktop') {
+    padding: 0 em($offset-base-desc) 0 em($offset-base-desc);
+  }
+}
+.layout__content {
+  flex-grow: 1;
+  flex-shrink: 0;
+  flex-basis: auto;
+}
+

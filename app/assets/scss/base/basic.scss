@@ -1,0 +1,62 @@
+@use "~/assets/scss/base/mixins.scss" as *;
+@use "~/assets/scss/base/variables.scss" as *;
+
+:root {
+  //расчет шрифта для clamp
+  --min-size: 10;        /* Без px для расчетов */
+  --max-size: 16; 
+  --min-viewport: 1051;
+  --max-viewport: 1920;
+
+  /* Добавляем 1px в конце, чтобы вернуть единицу измерения */
+  --rem-calc: calc(
+    (var(--min-size) * 1px) + 
+    (var(--max-size) - var(--min-size)) * 
+    (100vw - (var(--min-viewport) * 1px)) / 
+    (var(--max-viewport) - var(--min-viewport))
+  );
+
+  // Глобальные переопределения Swiper
+  --swiper-theme-color: #{$swiper-theme-color};
+  --swiper-navigation-color: #{$swiper-navigation-color};
+  --swiper-navigation-size: #{$swiper-navigation-size};
+  --swiper-pagination-color: #{$swiper-pagination-color};
+
+}
+
+body {
+  font-size: 16px;
+  @include mq('desktop') {
+    font-size: var(--rem-calc);
+  }
+}
+
+button {
+  background: none;
+  border: none;
+  padding: 0;
+  color: inherit;
+  font-family: var(--font-ttsmalls-regular);
+  font-size: inherit;
+  @media screen and (-ms-high-contrast: active), (-ms-high-contrast: none) {
+    font-family: Arial, sans-serif;
+  }
+  &:focus, &:hover {
+      outline: none;
+      cursor: pointer;
+  }
+}
+
+.hide-mobile {
+  display: none;
+  @include mq('desktop') { 
+    display: block
+  }
+}
+
+.hide-desktop {
+  display: block;
+  @include mq('desktop') { 
+    display: none
+  }
+}
