@@ -104,7 +104,7 @@ nuxt.config.js
 - Маппинг внутренних групп фильтров на поля бэкенда: `FILTER_KEY_MAP = { assets: 'partner_id' }`.
   Новые ключи (`tags`, `years`, `months`) добавляются туда же, если бэкенд ждёт другие имена.
 - `perPage = 6` для ленты; `currentPage` стартует со 2 (первая страница уже загружена).
-- Состояние фильтров: `activeFilters = { assets: [id...], tags: [...], years: [...], months: [...] }`.
+- Состояние фильтров: `activeFilters = { assets: [id...], tag_id: [...], years: [...], months: [...] }`.
 
 ## 8. Стиль и конвенции
 
