@@ -3,6 +3,60 @@ const { locale } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const newsStore = useNewsStore()
+
+// URL query — источник истины фильтров: filter[partner_id][0]=1043&filter[partner_id][1]=4&page=1&per_page=6
+const PER_PAGE = 6
+const FILTER_GROUPS = ['assets', 'tags', 'years', 'months']
+
+// Ключи групп модалки → имена параметров API
+const FILTER_PARAM_MAP = {
+  assets: 'partner_id',
+  tags: 'tag_id',
+  years: 'year',
+  months: 'month',
+}
+
+// Разбирает query-параметры вида filter[partner_id][0] в { assets: [id...], ... }
+function filtersFromQuery(query) {
+  const byParam = {}
+  for (const key of Object.keys(query)) {
+    const m = key.match(/^filter\[(\w+)\]\[(\d+)\]$/)
+    if (!m) continue
+    const param = m[1]
+    const group = Object.keys(FILTER_PARAM_MAP).find((g) => FILTER_PARAM_MAP[g] === param)
+    if (!group) continue
+    ;(byParam[param] ||= []).push({ index: Number(m[2]), value: String(query[key]) })
+  }
+  const result = {}
+  for (const [param, items] of Object.entries(byParam)) {
+    const group = Object.keys(FILTER_PARAM_MAP).find((g) => FILTER_PARAM_MAP[g] === param)
+    result[group] = items.sort((a, b) => a.index - b.index).map((i) => i.value)
+  }
+  return result
+}
+
+// Собирает объект query для router.push в формате API
+function buildRouteQuery(filters, page = 1) {
+  const query = {}
+  for (const group of FILTER_GROUPS) {
+    const ids = filters[group]
+    if (Array.isArray(ids)) {
+      const param = FILTER_PARAM_MAP[group]
+      ids.forEach((id, i) => {
+        query[`filter[${param}][${i}]`] = String(id)
+      })
+    }
+  }
+  query.page = String(page)
+  query.per_page = String(PER_PAGE)
+  return query
+}
+
+const appliedFilters = ref(filtersFromQuery(route.query))
+
+// Синхронизируем стор с фильтрами из URL до первого запроса (SSR и прямые ссылки)
+newsStore.setFilters(appliedFilters.value)
+
 // Загрузка данных для первых 6 новостей
 const { newsList } = storeToRefs(newsStore)
 await useAsyncData('initialNewsMedia', () => newsStore.fetchInitialNews())
@@ -17,22 +71,6 @@ const activeFilter = ref(null)
 watch(activeFilter, (value) => {
   isOpen.value = value !== null
 })
-
-// Источником истины выбранных фильтров служит URL query
-const FILTER_GROUPS = ['assets', 'tags', 'years', 'months']
-
-function filtersFromQuery(query) {
-  const result = {}
-  for (const group of FILTER_GROUPS) {
-    const raw = query[group]
-    if (typeof raw === 'string' && raw.length > 0) {
-      result[group] = raw.split(',').filter(Boolean)
-    }
-  }
-  return result
-}
-
-const appliedFilters = ref(filtersFromQuery(route.query))
 
 // Синхронизируем стор и список при изменении query (в т.ч. назад/вперёд, прямая ссылка)
 watch(
@@ -49,16 +87,7 @@ watch(
 
 // Применение фильтров из модалки → обновляем URL (watch выше перезапросит данные)
 async function onApplyFilters(draft) {
-  const query = { ...route.query }
-  for (const group of FILTER_GROUPS) {
-    const ids = draft[group]
-    if (ids && ids.length > 0) {
-      query[group] = ids.join(',')
-    } else {
-      delete query[group]
-    }
-  }
-  await router.push({ query })
+  await router.push({ query: buildRouteQuery(draft, 1) })
 }
 
 useHead({

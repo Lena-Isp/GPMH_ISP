@@ -18,12 +18,25 @@ export const useNewsStore = defineStore('media', () => {
 
   //---------------------------------------------- HELPERS ---------------------------------------------------------
 
-  // Собирает query-строку из выбранных фильтров: ?assets=1,2&tags=5&years=2024
+  // Ключи групп фильтров модалки → параметры API
+  const FILTER_PARAM_MAP = {
+    assets: 'partner_id',
+    tags: 'tag_id',
+    years: 'year',
+    months: 'month',
+  }
+
+  // Собирает строку фильтров в формате API: filter[partner_id][0]=1043&filter[partner_id][1]=4
   function buildFilterQuery() {
     const parts = []
-    for (const [key, ids] of Object.entries(activeFilters.value)) {
-      if (Array.isArray(ids) && ids.length > 0) {
-        parts.push(`${key}=${ids.map(encodeURIComponent).join(',')}`)
+    for (const [group, ids] of Object.entries(activeFilters.value)) {
+      const param = FILTER_PARAM_MAP[group] ?? group
+      if (Array.isArray(ids)) {
+        ids.forEach((id, i) => {
+          parts.push(`filter%5B${param}%5D%5B${i}%5D=${encodeURIComponent(id)}`)
+        })
+      } else if (ids !== undefined && ids !== null && ids !== '') {
+        parts.push(`filter%5B${param}%5D=${encodeURIComponent(ids)}`)
       }
     }
     return parts.length > 0 ? `&${parts.join('&')}` : ''
@@ -60,9 +73,14 @@ export const useNewsStore = defineStore('media', () => {
     }
   }
 
+  // Устанавливает выбранные фильтры (ключи групп модалки → списки id)
+  function setFilters(filters) {
+    activeFilters.value = { ...filters }
+  }
+
   async function fetchInitialNews() {
     if (newsList?.value?.length > 0) return newsList?.value
-    const response = await get(`/news?page=1&per_page=6${buildFilterQuery()}`)
+    const response = await get(`/news?page=1&per_page=${perPage}${buildFilterQuery()}`)
     const payload = response?.data || response
     newsList.value = payload
     return payload
@@ -149,6 +167,7 @@ export const useNewsStore = defineStore('media', () => {
     isLoading,
     activeFilters,
     // actions
+    setFilters,
     fetchInitialNews,
     fetchInitialSlider,
     fetchNewsFilters,
