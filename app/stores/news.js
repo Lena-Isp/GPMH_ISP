@@ -18,12 +18,19 @@ export const useNewsStore = defineStore('media', () => {
 
   //---------------------------------------------- HELPERS ---------------------------------------------------------
 
-  // Собирает query-строку из выбранных фильтров: ?assets=1,2&tags=5&years=2024
+  // Собирает query-строку из выбранных фильтров в формате Laravel:
+  // ?filter[partner_id][0]=1043&filter[partner_id][1]=4
+  // Ключи фильтров мапятся на имена полей бэкенда (assets → partner_id)
+  const FILTER_KEY_MAP = { assets: 'partner_id' }
+
   function buildFilterQuery() {
     const parts = []
     for (const [key, ids] of Object.entries(activeFilters.value)) {
       if (Array.isArray(ids) && ids.length > 0) {
-        parts.push(`${key}=${ids.map(encodeURIComponent).join(',')}`)
+        const backendKey = FILTER_KEY_MAP[key] || key
+        ids.forEach((id, index) => {
+          parts.push(`filter%5B${encodeURIComponent(backendKey)}%5D%5B${index}%5D=${encodeURIComponent(id)}`)
+        })
       }
     }
     return parts.length > 0 ? `&${parts.join('&')}` : ''
