@@ -1,15 +1,46 @@
 <script setup>
 const props = defineProps({
   modalTitle: Object,
+  appliedFilters: { type: Object, default: () => ({}) },
 })
+
+const emit = defineEmits(['apply'])
 
 const showModal = defineModel('show')
 const activeFilter = defineModel('active')
+
+// Черновик выбранных значений: { assets: [id...], tags: [id...], years: [...], months: [...] }
+const draft = ref({})
+
+const isChipActive = (group, id) => (draft.value[group] || []).includes(id)
+
+// Мультивыбор: повторный клик по chip снимает его
+const toggleChip = (group, id) => {
+  const current = draft.value[group] || []
+  const next = current.includes(id)
+    ? current.filter((x) => x !== id)
+    : [...current, id]
+  draft.value = { ...draft.value, [group]: next }
+}
+
+const selectedCount = computed(() =>
+  Object.values(draft.value).reduce((sum, ids) => sum + (ids?.length || 0), 0)
+)
 
 const closeModal = () => {
   showModal.value = false
   activeFilter.value = null
 }
+
+const applyFilters = () => {
+  emit('apply', { ...draft.value })
+  closeModal()
+}
+
+// При открытии модалки подтягиваем уже применённые фильтры в черновик
+watch(activeFilter, () => {
+  draft.value = JSON.parse(JSON.stringify(props.appliedFilters ?? {}))
+}, { immediate: true })
 </script>
 
 <template>
@@ -26,7 +57,9 @@ const closeModal = () => {
           <template v-for="(x, index) in modalTitle?.partners" :key="index">
             <Chips 
               :name="x?.name"
+              :active="isChipActive('assets', x.id)"
               :hoverColor="$color.C_2736"
+              @click="toggleChip('assets', x.id)"
             />
           </template>
         </div>
@@ -34,7 +67,9 @@ const closeModal = () => {
           <template v-for="(x, index) in modalTitle?.tags" :key="index">
             <Chips 
               :name="x?.name"
+              :active="isChipActive('tags', x.id)"
               :hoverColor="$color.C_2736"
+              @click="toggleChip('tags', x.id)"
             />
           </template>
         </div>
@@ -49,7 +84,9 @@ const closeModal = () => {
           <template v-for="(x, index) in modalTitle.years" :key="index">
             <Chips 
               :name="x.name"
+              :active="isChipActive('years', x.id)"
               :hoverColor="$color.C_2736"
+              @click="toggleChip('years', x.id)"
             />
           </template>
           <div class="modal__month">
@@ -62,13 +99,15 @@ const closeModal = () => {
           <template v-for="(x, index) in modalTitle.months" :key="index">
             <Chips 
               :name="x.name"
+              :active="isChipActive('months', x.id)"
               :hoverColor="$color.C_2736"
+              @click="toggleChip('months', x.id)"
             />
           </template>
         </div>
       </div>
       <div class="modal__footer">
-        <ButtonMore text="Применить" />
+        <ButtonMore :text="selectedCount > 0 ? `Применить (${selectedCount})` : 'Применить'" @click="applyFilters" />
       </div>
     </div>
   </Transition>

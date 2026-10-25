@@ -1,5 +1,7 @@
 <script setup>
 const { locale } = useI18n()
+const route = useRoute()
+const router = useRouter()
 const newsStore = useNewsStore()
 // Загрузка данных для первых 6 новостей
 const { newsList } = storeToRefs(newsStore)
@@ -15,6 +17,49 @@ const activeFilter = ref(null)
 watch(activeFilter, (value) => {
   isOpen.value = value !== null
 })
+
+// Источником истины выбранных фильтров служит URL query
+const FILTER_GROUPS = ['assets', 'tags', 'years', 'months']
+
+function filtersFromQuery(query) {
+  const result = {}
+  for (const group of FILTER_GROUPS) {
+    const raw = query[group]
+    if (typeof raw === 'string' && raw.length > 0) {
+      result[group] = raw.split(',').filter(Boolean)
+    }
+  }
+  return result
+}
+
+const appliedFilters = ref(filtersFromQuery(route.query))
+
+// Синхронизируем стор и список при изменении query (в т.ч. назад/вперёд, прямая ссылка)
+watch(
+  () => route.query,
+  async (query) => {
+    const next = filtersFromQuery(query)
+    const changed = JSON.stringify(next) !== JSON.stringify(appliedFilters.value)
+    appliedFilters.value = next
+    if (changed) {
+      await newsStore.applyFilters(next)
+    }
+  }
+)
+
+// Применение фильтров из модалки → обновляем URL (watch выше перезапросит данные)
+async function onApplyFilters(draft) {
+  const query = { ...route.query }
+  for (const group of FILTER_GROUPS) {
+    const ids = draft[group]
+    if (ids && ids.length > 0) {
+      query[group] = ids.join(',')
+    } else {
+      delete query[group]
+    }
+  }
+  await router.push({ query })
+}
 
 useHead({
   bodyAttrs: {
@@ -61,6 +106,8 @@ useHead({
       v-model:show="isOpen"
       v-model:active="activeFilter"
       :modalTitle="newsListFilter"
+      :appliedFilters="appliedFilters"
+      @apply="onApplyFilters"
     />
   </ClientOnly>
 </template>
