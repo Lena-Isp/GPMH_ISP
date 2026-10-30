@@ -1,12 +1,13 @@
 <script setup>
 const route = useRoute()
 const theme = computed(() => route.meta.theme || 'dark')
-//для меню
+//для меню и футера — параллельно, чтобы не сумировать сетевые задержки на SSR
 const partnerStore = usePartnerStore()
-await useAsyncData('partnerDef', () => partnerStore.fetchPartners())
-//для футера
 const siteStore = useSiteStore()
-await useAsyncData('settingsDef', () => siteStore.fetchSettings())
+await Promise.all([
+  useAsyncData('partnerDef', () => partnerStore.fetchPartners()),
+  useAsyncData('settingsDef', () => siteStore.fetchSettings()),
+])
 </script>
 
 <template>
