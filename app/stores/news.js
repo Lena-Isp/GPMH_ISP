@@ -19,8 +19,15 @@ export const useNewsStore = defineStore('media', () => {
   // Есть ли ещё новости
   const hasMore = ref(true)
 
-  // Состояние загрузки
-  const isLoading = ref(false)
+  // Раздельные состояния загрузки
+  const isInitialLoading = ref(false)
+  const isMoreLoading = ref(false)
+
+  // Общее состояние для интерфейса
+  const isLoading = computed(() => {
+    return isInitialLoading.value || isMoreLoading.value
+  })
+    
 
   // Информация о пагинации от сервера
   const paginationMeta = ref(null)
@@ -130,28 +137,28 @@ export const useNewsStore = defineStore('media', () => {
   // Первоначальная загрузка новостей
   async function fetchInitialNews(query = {}) {
     const requestId = ++initialRequestId
-
+  
     const page = Math.max(Number(query.page) || 1, 1)
     const pageSize = Math.max(Number(query.per_page) || perPage, 1)
-
-    // Сохраняем все параметры фильтрации,
-    // но не сохраняем старые параметры пагинации
+  
     const filters = Object.fromEntries(
       Object.entries(query).filter(([key]) => {
         return key !== 'page' && key !== 'per_page'
       })
     )
-
+  
     currentQuery.value = filters
-
-    // Сбрасываем старые данные перед новой загрузкой
+  
+    // Сбрасываем предыдущую выдачу
     newsList.value = []
     paginationMeta.value = null
     hasMore.value = false
     currentPage.value = page + 1
-
-    isLoading.value = true
-
+  
+    // Начинается новая загрузка — старую дополнительную отменяем логически
+    isInitialLoading.value = true
+    isMoreLoading.value = false
+  
     try {
       const response = await get('/news', {
         query: {
@@ -160,36 +167,32 @@ export const useNewsStore = defineStore('media', () => {
           per_page: pageSize,
         },
       })
-
-      // Если за время запроса пользователь сменил фильтры,
-      // игнорируем устаревший ответ
+  
+      // Игнорируем ответ предыдущего запроса
       if (requestId !== initialRequestId) {
         return []
       }
-
+  
       const data = getNewsData(response)
       const meta = response?.meta || null
-
+  
       newsList.value = data
       paginationMeta.value = meta
-
-      // Следующая страница
+  
       currentPage.value = (Number(meta?.page) || page) + 1
-
-      // Проверяем наличие следующих страниц
       hasMore.value = checkHasMore(data, meta)
-
+  
       return data
     } catch (err) {
       if (requestId === initialRequestId) {
         newsList.value = []
         hasMore.value = false
       }
-
+  
       throw err
     } finally {
       if (requestId === initialRequestId) {
-        isLoading.value = false
+        isInitialLoading.value = false
       }
     }
   }
@@ -216,49 +219,61 @@ export const useNewsStore = defineStore('media', () => {
 
   // Загрузка следующей страницы
   async function fetchMoreNews() {
-    // Не отправляем повторный запрос
-    if (isLoading.value || !hasMore.value) {
+    // Не загружаем следующую страницу параллельно с другой загрузкой
+    if (
+      isInitialLoading.value ||
+      isMoreLoading.value ||
+      !hasMore.value
+    ) {
       return {
         status: 'no_more',
         data: [],
       }
     }
-
-    isLoading.value = true
-
+  
+    // Запоминаем версию запроса и параметры текущей выдачи
+    const requestId = initialRequestId
+    const querySnapshot = { ...currentQuery.value }
+    const pageSnapshot = currentPage.value
+  
+    isMoreLoading.value = true
+  
     try {
       const response = await get('/news', {
         query: {
-          ...currentQuery.value,
-          page: currentPage.value,
+          ...querySnapshot,
+          page: pageSnapshot,
           per_page: perPage,
         },
       })
-
+  
+      // Пока выполнялся запрос, могли изменить фильтры
+      if (requestId !== initialRequestId) {
+        return []
+      }
+  
       const data = getNewsData(response)
       const meta = response?.meta || null
-
-      // Добавляем новые новости к существующим
+  
       newsList.value = appendUniqueNews(
         newsList.value,
         data
       )
-
+  
       paginationMeta.value = meta
-
-      // Переходим к следующей странице
-      currentPage.value = (Number(meta?.page) || currentPage.value) + 1
-
-      // Проверяем, есть ли ещё новости
+  
+      currentPage.value = (Number(meta?.page) || pageSnapshot) + 1
       hasMore.value = checkHasMore(data, meta)
-
+  
       return data
     } catch (err) {
-      // При ошибке currentPage не увеличиваем:
-      // пользователь сможет повторить запрос
+      // currentPage не меняем — запрос можно повторить
       throw err
     } finally {
-      isLoading.value = false
+      // Не меняем состояние загрузки более нового запроса
+      if (requestId === initialRequestId) {
+        isMoreLoading.value = false
+      }
     }
   }
 

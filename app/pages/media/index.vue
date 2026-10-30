@@ -81,19 +81,39 @@
   </div>
 
   <div class="news">
-    <div class="news__item" v-for="(items, index) in newsList" :key="items.id">
-      <NewsCard :news="items" :numb="index"/>
+    <div
+      class="news__item"
+      v-for="(items, index) in newsList"
+      :key="items.id ?? index"
+    >
+      <NewsCard :news="items" :numb="index" />
     </div>
   </div>
+
+  <div
+    v-if="isLoading && !newsList.length"
+    class="news-empty"
+  >
+    Загрузка новостей...
+  </div>
+
+  <div
+    v-else-if="!isLoading && !newsList.length"
+    class="news-empty"
+  >
+    По выбранным фильтрам новостей не найдено.
+  </div>
+
   <div
     class="news-button container-full"
-    v-if="hasMore"
+    v-if="hasMore && newsList.length"
   >
     <ButtonMore
       :text="isLoading ? 'Загрузка...' : 'Показать ещё'"
       @click="fetchMoreNews"
     />
   </div>
+
   <div class="news-next container-full">
     <PaginationPage 
       :text="$t('contacts.name')"
@@ -139,6 +159,12 @@
     gap: em(30);
     margin-top: em(55);
   }
+}
+
+.news-empty {
+  width: 100%;
+  padding: em(60) 0;
+  text-align: center;
 }
 
 .news__item {
