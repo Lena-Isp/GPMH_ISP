@@ -1,14 +1,28 @@
+
 <script setup>
 const props = defineProps({
   news: Object,
   numb: Number
 })
+
 const formatted = computed(() => {
-  return new Date(props.news.created_at).toLocaleString('ru-RU', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  }).replace(' г.', '')
+  if (!props.news?.created_at) return ''
+
+  return new Date(props.news.created_at)
+    .toLocaleString('ru-RU', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    })
+    .replace(' г.', '')
+})
+
+const imageLoading = computed(() => {
+  return props.numb === 0 ? 'eager' : 'lazy'
+})
+
+const imagePriority = computed(() => {
+  return props.numb === 0 ? 'high' : null
 })
 </script>
 
@@ -16,30 +30,40 @@ const formatted = computed(() => {
   <NuxtLinkLocale class="news-card" :to="`/media/${news.slug}`">
     <div class="news-card__image">
       <picture>
-        <source :srcset="news?.image_webp ? news?.image_webp : '/news_plug.webp'" type="image/webp" />
+        <source
+          v-if="news?.image_webp"
+          :srcset="news.image_webp"
+          type="image/webp"
+        />
+
         <img
-          :src="news?.image ? news?.image : '/news_plug.png'"
-          :alt="news?.image_alt"
-          width="100%"
-          height="100%"
-          :rel="numb <= 2 ? 'preload' : false"
-          :fetchpriority="numb <= 2 ? 'high' : false"
+          :src="news?.image || '/news_plug.png'"
+          :alt="news?.image_alt || news?.name || ''"
+          :loading="imageLoading"
+          :fetchpriority="imagePriority"
+          decoding="async"
         />
       </picture>
     </div>
+
     <div class="news-card__date">
       <Text
         :variant="[$typographyVariant.T_SMALL_16_MOB, $typographyVariant.T_SMALL_20]"
         :font="$font.TTSMALLS_REGULAR"
         :color="$color.GRAY"
-      > {{ formatted }}</Text>
+      >
+        {{ formatted }}
+      </Text>
     </div>
+
     <div class="news-card__text">
       <Text
         :variant="[$typographyVariant.T_BIG_24_MOB, $typographyVariant.T_BIG_36]"
         :font="$font.MAREGRAPHE_REGULAR"
         :color="$color.WHITE"
-      > {{ news.name }}</Text>
+      >
+        {{ news.name }}
+      </Text>
     </div>
   </NuxtLinkLocale>
 </template>
@@ -51,7 +75,6 @@ const formatted = computed(() => {
   height: 100%;
 
   @include mq('desktop') {
-    //width: calc((100% - em(60)) / 3);
     position: relative;
 
     &::after {
@@ -60,7 +83,6 @@ const formatted = computed(() => {
       bottom: 0;
       left: 0;
       height: 0;
-      //transform: translateY(20px);
       background-color: var(--color-C_2101);
       width: 100%;
       opacity: 0;
@@ -72,6 +94,7 @@ const formatted = computed(() => {
         opacity: 1;
         height: em(20);
       }
+
       .news-card__image img {
         transform: scale(1.07);
       }
@@ -80,25 +103,35 @@ const formatted = computed(() => {
 }
 
 .news-card__image {
+  width: 100%;
+  aspect-ratio: 16 / 9;
   margin-bottom: em(10);
   overflow: hidden;
-  @include mq('desktop') {
-    margin-bottom: em(30);
-  }
-  img {
+
+  picture {
+    display: block;
     width: 100%;
-    height: auto;
+    height: 100%;
+  }
+
+  img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
     transition: transform linear .3s;
-    @include mq('desktop') {
-      width: 100%;
-      height: em(400);
-      object-fit: cover;
-    }
+  }
+
+  @include mq('desktop') {
+    height: em(400);
+    aspect-ratio: auto;
+    margin-bottom: em(30);
   }
 }
 
 .news-card__date {
   margin-bottom: em(10);
+
   @include mq('desktop') {
     margin-bottom: em(24);
   }
@@ -106,6 +139,7 @@ const formatted = computed(() => {
 
 .news-card__text {
   margin-bottom: em(50);
+
   @include mq('desktop') {
     margin-bottom: em(92);
   }
