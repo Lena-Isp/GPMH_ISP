@@ -2,9 +2,7 @@ export default defineNuxtPlugin((nuxtApp) => {
   const i18n = nuxtApp.$i18n
 
   const api = $fetch.create({
-    baseURL: 'https://www.gazprom-media.com/api',
-    //baseURL: 'https://backend-dev-gpmh.umaws.ru/api',
-    //baseURL: '/api',
+    baseURL: '/api',
 
     onRequest({ options }) {
       const currentLocale = i18n.locale.value || 'ru'
