@@ -18,4 +18,3 @@ await useAsyncData('settingsDef', () => siteStore.fetchSettings())
   <AppFooter />
 </div>
 </template>
-

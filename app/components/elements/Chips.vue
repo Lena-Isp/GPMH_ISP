@@ -1,33 +1,38 @@
 <script setup>
 const props = defineProps({
   name: String,
+  id: [String, Number],
   link: String,
-  active: { type: Boolean, default: false },
-  hoverColor: { type: String, default: 'transparent' } 
+  hoverColor: { 
+    type: String, 
+    default: 'transparent' 
+  },
 });
+
+const newsFilterStore = useNewsFilterStore()
+const { selectedFilters } = storeToRefs(newsFilterStore)
+
+const isActive = computed(() => {
+  if (props.link) return false
+  return selectedFilters.value?.some(
+    item => item.id === props.id
+  )
+})
+
+const handleClick = (event) => {
+  if (props.link) return
+  event.preventDefault()
+}
 </script>
 
 <template>
-<button
-  v-if="!link && name"
-  type="button"
-  class="chips"
-  :class="{ 'chips--active': active }"
-  :aria-pressed="active ? 'true' : 'false'"
+<NuxtLinkLocale 
+  v-if="name"
+  class="chips" 
+  :class="{ 'chips--active': isActive }" 
+  :to="link || undefined" 
+  @click="handleClick"
 >
-  <Text
-    :variant="[$typographyVariant.T_SMALL_16_MOB, $typographyVariant.T_BIG_36]"
-    :font="$font.TTSMALLS_REGULAR"
-    :color="$color.WHITE"
-    class="chips__text"
-  > {{ name }}</Text>
-  <span class="chips__bg"
-    :style="{
-      'background-color': hoverColor
-    }"
-/>
-</button>
-<NuxtLinkLocale v-else-if="name" class="chips" :to="link">
   <Text
     :variant="[$typographyVariant.T_SMALL_16_MOB, $typographyVariant.T_BIG_36]"
     :font="$font.TTSMALLS_REGULAR"
@@ -52,19 +57,20 @@ const props = defineProps({
   display: inline-block;
   overflow: hidden;
   text-transform: uppercase;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  cursor: pointer;
+  transition: border-radius 0.2s ease;
   &:hover {
+    cursor: pointer;
+    border-radius: 0;
     .chips__bg {
       opacity: 1;
+      border-radius: 0;
     }
   }
   &--active {
-    border-color: var(--color-C_2101);
+    border-radius: 0;
     .chips__bg {
       opacity: 1;
+      border-radius: 0;
     }
   }
 }
@@ -83,5 +89,6 @@ const props = defineProps({
   top: -1px;
   opacity: 0;
   z-index: 0;
+  transition: opacity 0.2s ease, border-radius 0.2s ease;
 }
 </style>

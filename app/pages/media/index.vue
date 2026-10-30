@@ -1,71 +1,49 @@
 <script setup>
-const { locale } = useI18n()
-const route = useRoute()
-const router = useRouter()
-const newsStore = useNewsStore()
-// Загрузка данных для первых 6 новостей
-const { newsList } = storeToRefs(newsStore)
-await useAsyncData('initialNewsMedia', () => newsStore.fetchInitialNews())
-// Загрузка фильтров
-const { newsListFilter } = storeToRefs(newsStore)
-await useAsyncData('newsFilters', () => newsStore.fetchNewsFilters())
+  const { locale } = useI18n()
+  const route = useRoute()
+  const newsStore = useNewsStore()
+  const newsFilterStore = useNewsFilterStore()
 
-const isOpen = ref(false)
-const activeFilter = ref(null)
-
-// Открываем модалку при выборе любого фильтра, кроме "Все"
-watch(activeFilter, (value) => {
-  isOpen.value = value !== null
-})
-
-// Источником истины выбранных фильтров служит URL query
-const FILTER_GROUPS = ['assets', 'tag_id', 'years', 'months']
-
-function filtersFromQuery(query) {
-  const result = {}
-  for (const group of FILTER_GROUPS) {
-    const raw = query[group]
-    if (typeof raw === 'string' && raw.length > 0) {
-      result[group] = raw.split(',').filter(Boolean)
+  // Загрузка данных для первых 6 новостей
+  const { newsList, newsListFilter } = storeToRefs(newsStore)
+  const { fetchMoreNews } = newsStore
+  await useAsyncData(
+    'initialNewsMedia', 
+    () => newsStore.fetchInitialNews(route.query),
+    {
+      watch: [() => route.fullPath],
     }
-  }
-  return result
-}
+  )
 
-const appliedFilters = ref(filtersFromQuery(route.query))
+  // для модального окна и фильтров
+  const { activeFilter, isModal, filterOptions, selectedFilters } = storeToRefs(newsFilterStore)
+  const { openModalFilter, clearFilters, deleteFilters, syncFiltersFromQuery} = newsFilterStore
 
-// Синхронизируем стор и список при изменении query (в т.ч. назад/вперёд, прямая ссылка)
-watch(
-  () => route.query,
-  async (query) => {
-    const next = filtersFromQuery(query)
-    const changed = JSON.stringify(next) !== JSON.stringify(appliedFilters.value)
-    appliedFilters.value = next
-    if (changed) {
-      await newsStore.applyFilters(next)
+  const dictionaries = computed(() => ({
+    partners: newsListFilter.value?.partners || [],
+    tags: newsListFilter.value?.tags || [],
+    years: newsListFilter.value?.years || [],
+    months: newsListFilter.value?.months || [],
+  }))
+
+  watch(
+    [
+      () => route.query,
+      dictionaries,
+    ],
+    ([query, options]) => {
+      syncFiltersFromQuery(query, options)
+    },
+    {
+      immediate: true,
     }
-  }
-)
+  )
 
-// Применение фильтров из модалки → обновляем URL (watch выше перезапросит данные)
-async function onApplyFilters(draft) {
-  const query = { ...route.query }
-  for (const group of FILTER_GROUPS) {
-    const ids = draft[group]
-    if (ids && ids.length > 0) {
-      query[group] = ids.join(',')
-    } else {
-      delete query[group]
+  useHead({
+    bodyAttrs: {
+      style: computed(() => isModal.value ? 'overflow: hidden' : '')
     }
-  }
-  await router.push({ query })
-}
-
-useHead({
-  bodyAttrs: {
-    style: computed(() => isOpen.value ? 'overflow: hidden' : '')
-  }
-})
+  })
 </script>
 
 <template>
@@ -76,14 +54,28 @@ useHead({
       :variant="[$typographyVariant.T_H1_55_MOB, $typographyVariant.T_H1_150]"
       :font="$font.MAREGRAPHE_REGULAR"
       :color="$color.WHITE"
-    >Новости</Text>
+    >Новости </Text>
   </div>
 
   <div class="news-filter">
-    <FilterItem name="Все" :active="activeFilter == null" />
-    <FilterItem name="Активы" :active="activeFilter == 'assets'" @click="activeFilter = 'assets'" />
-    <FilterItem name="Теги" :active="activeFilter == 'tag_id'" @click="activeFilter = 'tag_id'" />
-    <FilterItem name="Дата" :active="activeFilter == 'date'" @click="activeFilter = 'date'" />
+    <FilterItem
+      v-for="option in filterOptions"
+      :key="option?.value"
+      :name="option?.name"
+      :optionId="option?.value"
+      @click="openModalFilter(option?.value)"
+    />
+  </div>
+  <div class="news-filter news-filter--checked" v-if="selectedFilters?.length">
+    <FilterCheck 
+      @click="clearFilters"
+    />
+    <FilterCheck 
+      v-for="(item, idx) in selectedFilters" 
+      :key="idx"
+      :name="item?.name"
+      @click="deleteFilters(item?.id)"
+    />
   </div>
 
   <div class="news">
@@ -92,7 +84,7 @@ useHead({
     </div>
   </div>
   <div class="news-button container-full">
-    <ButtonMore text="Показать ещё" @click="newsStore?.fetchMoreNews()"/>
+    <ButtonMore text="Показать ещё" @click="fetchMoreNews()"/>
   </div>
   <div class="news-next container-full">
     <PaginationPage 
@@ -102,13 +94,7 @@ useHead({
   </div>
 </div>
   <ClientOnly>
-    <FilterModal 
-      v-model:show="isOpen"
-      v-model:active="activeFilter"
-      :modalTitle="newsListFilter"
-      :appliedFilters="appliedFilters"
-      @apply="onApplyFilters"
-    />
+    <FilterModal v-show="isModal" />
   </ClientOnly>
 </template>
 
@@ -125,10 +111,13 @@ useHead({
   display: flex;
   align-items: center;
   gap: em(15);
-  margin-bottom: em(20);
   @include mq('desktop') {
     gap: em(30);
-    margin-bottom: em(55);
+  }
+  &--checked {
+    gap: em(6);
+    flex-wrap: wrap;
+    margin-top: em(20);
   }
 }
 
@@ -137,8 +126,10 @@ useHead({
   display: flex;
   flex-wrap: wrap;
   gap: em(20) 0;
+  margin-top: em(20);
   @include mq('desktop') {
     gap: em(30);
+    margin-top: em(55);
   }
 }
 

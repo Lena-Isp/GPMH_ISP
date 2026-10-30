@@ -1,78 +1,55 @@
 <script setup>
-const props = defineProps({
-  modalTitle: Object,
-  appliedFilters: { type: Object, default: () => ({}) },
-})
+  const newsStore = useNewsStore()
+  const newsFilterStore = useNewsFilterStore()
 
-const emit = defineEmits(['apply'])
+  // Загрузка фильтров
+  const { newsListFilter } = storeToRefs(newsStore)
+  await useAsyncData('newsFilters', () => newsStore.fetchNewsFilters())
 
-const showModal = defineModel('show')
-const activeFilter = defineModel('active')
+  // Модальное окно
+  const { activeFilter, selectedFilters } = storeToRefs(newsFilterStore)
+  const { closeModalFilter, checkedFilter, onApplyFilters } = newsFilterStore
 
-// Черновик выбранных значений: { assets: [id...], tags: [id...], years: [...], months: [...] }
-const draft = ref({})
-
-const isChipActive = (group, id) => (draft.value[group] || []).includes(id)
-
-// Мультивыбор: повторный клик по chip снимает его
-const toggleChip = (group, id) => {
-  const current = draft.value[group] || []
-  const next = current.includes(id)
-    ? current.filter((x) => x !== id)
-    : [...current, id]
-  draft.value = { ...draft.value, [group]: next }
-}
-
-const selectedCount = computed(() =>
-  Object.values(draft.value).reduce((sum, ids) => sum + (ids?.length || 0), 0)
-)
-
-const closeModal = () => {
-  showModal.value = false
-  activeFilter.value = null
-}
-
-const applyFilters = () => {
-  emit('apply', { ...draft.value })
-  closeModal()
-}
-
-// При открытии модалки подтягиваем уже применённые фильтры в черновик
-watch(activeFilter, () => {
-  draft.value = JSON.parse(JSON.stringify(props.appliedFilters ?? {}))
-}, { immediate: true })
 </script>
 
 <template>
-  <Transition name="fade" appear v-show="showModal">
+  <Transition name="fade" appear>
     <div class="modal">
       <div class="modal__top">
         <IconSvg
           class="modal__close"
           :name="$iconName.CROSS" 
           :size="[$iconSize.LARGE, $iconSize.NEW_MEDIUM_MOB]"
-          @click="closeModal"
+          @click="closeModalFilter"
         />
-        <div class="modal__filters" v-show="activeFilter == 'assets'">
-          <template v-for="(x, index) in modalTitle?.partners" :key="index">
+
+        <!--PARTNER-->
+        <div class="modal__filters" v-show="activeFilter == 'partner_id'">
+          <template v-for="(item, idx) in newsListFilter?.partners" :key="idx">
             <Chips 
-              :name="x?.name"
-              :active="isChipActive('assets', x.id)"
+              :name="item?.name"
+              :id="item?.id"
               :hoverColor="$color.C_2736"
-              @click="toggleChip('assets', x.id)"
+              @click="checkedFilter('partner_id', item.id, item.name)"
             />
           </template>
         </div>
+        <!--PARTNER_END-->
+
+        <!--TAGS-->
         <div class="modal__filters" v-show="activeFilter == 'tag_id'">
-          <template v-for="(x, index) in modalTitle?.tags" :key="index">
+          <template v-for="(item, idx) in newsListFilter?.tags" :key="idx">
             <Chips 
-              :name="x?.name"
-              :active="isChipActive('tag_id', x.id)"
+              :name="item?.name"
+              :id="item?.id"
               :hoverColor="$color.C_2736"
-              @click="toggleChip('tag_id', x.id)"
+              @click="checkedFilter('tag_id', item.id, item.name)"
             />
           </template>
         </div>
+        <!--TAGS_END-->
+
+        <!--DATE-->
         <div class="modal__filters modal__filters--date" v-show="activeFilter == 'date'">
           <div class="modal__years">
             <Text
@@ -81,12 +58,12 @@ watch(activeFilter, () => {
               :color="$color.GRAY"
             >Год</Text>
           </div>
-          <template v-for="(x, index) in modalTitle.years" :key="index">
+          <template v-for="(item, idx) in newsListFilter?.years" :key="idx">
             <Chips 
-              :name="x.name"
-              :active="isChipActive('years', x.id)"
+              :name="item.name"
+              :id="item?.id"
               :hoverColor="$color.C_2736"
-              @click="toggleChip('years', x.id)"
+              @click="checkedFilter('years', item.id, item.name)"
             />
           </template>
           <div class="modal__month">
@@ -96,18 +73,20 @@ watch(activeFilter, () => {
               :color="$color.GRAY"
             >Месяц</Text>
           </div>
-          <template v-for="(x, index) in modalTitle.months" :key="index">
+          <template v-for="(item, idx) in newsListFilter?.months" :key="idx">
             <Chips 
-              :name="x.name"
-              :active="isChipActive('months', x.id)"
+              :name="item.name"
+              :id="item?.id"
               :hoverColor="$color.C_2736"
-              @click="toggleChip('months', x.id)"
+              @click="checkedFilter('months', item.id, item.name)"
             />
           </template>
         </div>
+        <!--DATE_END-->
+
       </div>
       <div class="modal__footer">
-        <ButtonMore :text="selectedCount > 0 ? `Применить (${selectedCount})` : 'Применить'" @click="applyFilters" />
+        <ButtonMore text="Применить" @click="onApplyFilters" />
       </div>
     </div>
   </Transition>
@@ -158,7 +137,7 @@ watch(activeFilter, () => {
     width: 100%;
     margin-bottom: em(20);
     @include mq('desktop') {
-       margin-bottom: em(30);
+      margin-bottom: em(30);
     }
   }
 

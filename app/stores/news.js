@@ -13,34 +13,6 @@ export const useNewsStore = defineStore('media', () => {
   const perPage = 6
   const hasMore = ref(true)
   const isLoading = ref(false)
-  // Выбранные фильтры: { assets: [id...], tags: [id...], years: [...], months: [...] }
-  const activeFilters = ref({})
-
-  //---------------------------------------------- HELPERS ---------------------------------------------------------
-
-  // Собирает query-строку из выбранных фильтров в формате Laravel:
-  // ?filter[partner_id][0]=1043&filter[partner_id][1]=4
-  // Ключи фильтров мапятся на имена полей бэкенда (assets → partner_id)
-  const FILTER_KEY_MAP = { assets: 'partner_id' }
-
-  function buildFilterQuery() {
-    const parts = []
-    for (const [key, ids] of Object.entries(activeFilters.value)) {
-      if (Array.isArray(ids) && ids.length > 0) {
-        const backendKey = FILTER_KEY_MAP[key] || key
-        ids.forEach((id, index) => {
-          parts.push(`filter%5B${encodeURIComponent(backendKey)}%5D%5B${index}%5D=${encodeURIComponent(id)}`)
-        })
-      }
-    }
-    return parts.length > 0 ? `&${parts.join('&')}` : ''
-  }
-
-  function resetPagination() {
-    newsList.value = []
-    currentPage.value = 2
-    hasMore.value = true
-  }
   //---------------------------------------------- ACTIONS ---------------------------------------------------------
   
   async function fetchNewsBySlug(slug) {
@@ -67,11 +39,36 @@ export const useNewsStore = defineStore('media', () => {
     }
   }
 
-  async function fetchInitialNews() {
-    if (newsList?.value?.length > 0) return newsList?.value
-    const response = await get(`/news?page=1&per_page=6${buildFilterQuery()}`)
+  // async function fetchInitialNews() {
+  //   if (newsList?.value?.length > 0) return newsList?.value
+  //   const response = await get('/news?page=1&per_page=6')
+  //   const payload = response?.data || response
+  //   newsList.value = payload
+  //   return payload
+  // }
+  
+  async function fetchInitialNews(query = {}) {
+    const params = {
+      page: query.page || 1,
+      per_page: query.per_page || 6,
+    }
+  
+    Object.entries(query).forEach(([key, value]) => {
+      if (key === 'page' || key === 'per_page') return
+  
+      if (value !== null && value !== undefined) {
+        params[key] = value
+      }
+    })
+  
+    const response = await get('/news', {
+      query: params,
+    })
+  
     const payload = response?.data || response
+  
     newsList.value = payload
+  
     return payload
   }
 
@@ -87,38 +84,21 @@ export const useNewsStore = defineStore('media', () => {
     // Не загружаем, если уже идёт загрузка или данных больше нет
     if (isLoading.value || !hasMore.value) return { status: 'no_more' }
 
-    isLoading.value = true
-    try {
-      const response = await get(
-        `/news?page=${currentPage.value}&per_page=${perPage}${buildFilterQuery()}`
-      )
+    const response = await get(
+      `/news?page=${currentPage.value}&per_page=${perPage}`
+    )
 
-      if (response?.data) {
-        // Добавляем новые данные к существующим
-        newsList.value = [...newsList.value, ...response.data]
-        // Проверяем, есть ли ещё страницы
-        hasMore.value = response.data.length === perPage
-        currentPage.value += 1
-        return response.data
-      } else {
-        hasMore.value = false
-        return []
-      }
-    } finally {
-      isLoading.value = false
+    if (response?.data) {
+      // Добавляем новые данные к существующим
+      newsList.value = [...newsList.value, ...response.data]
+      // Проверяем, есть ли ещё страницы
+      hasMore.value = response.data.length === perPage
+      currentPage.value += 1
+      return response.data
+    } else {
+      hasMore.value = false
+      return []
     }
-  }
-
-  // Применяет выбранные фильтры и перезапрашивает первую страницу
-  async function applyFilters(filters) {
-    activeFilters.value = { ...filters }
-    resetPagination()
-    const response = await get(`/news?page=1&per_page=${perPage}${buildFilterQuery()}`)
-    const payload = response?.data ?? response
-    newsList.value = Array.isArray(payload) ? payload : []
-    hasMore.value = Array.isArray(payload) && payload.length === perPage
-    currentPage.value = 2
-    return payload
   }
   
   async function fetchNewsFilters() {
@@ -154,13 +134,11 @@ export const useNewsStore = defineStore('media', () => {
     currentNews,
     currentArticle,
     isLoading,
-    activeFilters,
     // actions
     fetchInitialNews,
     fetchInitialSlider,
     fetchNewsFilters,
     fetchMoreNews,
-    applyFilters,
     fetchNewsBySlug,
   }
 })
