@@ -5,7 +5,7 @@
   const newsFilterStore = useNewsFilterStore()
 
   // Загрузка данных для первых 6 новостей
-  const { newsList, newsListFilter } = storeToRefs(newsStore)
+  const { newsList, newsListFilter, hasMore, isLoading } = storeToRefs(newsStore)
   const { fetchMoreNews } = newsStore
   await useAsyncData(
     'initialNewsMedia', 
@@ -66,15 +66,17 @@
       @click="openModalFilter(option?.value)"
     />
   </div>
-  <div class="news-filter news-filter--checked" v-if="selectedFilters?.length">
-    <FilterCheck 
-      @click="clearFilters"
-    />
-    <FilterCheck 
-      v-for="(item, idx) in selectedFilters" 
-      :key="idx"
-      :name="item?.name"
-      @click="deleteFilters(item?.id)"
+  <div
+    class="news-filter news-filter--checked"
+    v-if="selectedFilters?.length"
+  >
+    <FilterCheck @click="clearFilters" />
+
+    <FilterCheck
+      v-for="item in selectedFilters"
+      :key="`${item.type}-${item.id}`"
+      :name="item.name"
+      @click="deleteFilters(item.type, item.id)"
     />
   </div>
 
@@ -83,8 +85,14 @@
       <NewsCard :news="items" :numb="index"/>
     </div>
   </div>
-  <div class="news-button container-full">
-    <ButtonMore text="Показать ещё" @click="fetchMoreNews()"/>
+  <div
+    class="news-button container-full"
+    v-if="hasMore"
+  >
+    <ButtonMore
+      :text="isLoading ? 'Загрузка...' : 'Показать ещё'"
+      @click="fetchMoreNews"
+    />
   </div>
   <div class="news-next container-full">
     <PaginationPage 

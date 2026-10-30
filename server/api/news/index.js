@@ -1,30 +1,43 @@
 import { mockNews } from '../../data/news.js'
+import { mockFilters } from '../../data/filters.js'
 
 export default defineEventHandler((event) => {
   const query = getQuery(event)
 
-  // 1. Нормализуем структуру исходных данных.
-  // В news.js: mockNews = [{ data: [...], links, meta }]
-  const sourceNews = Array.isArray(mockNews)
-    ? mockNews.flatMap((entry) =>
-        Array.isArray(entry.data) ? entry.data : [entry]
-      )
-    : []
+  //---------------------------------------------- HELPERS ---------------------------------------------------------
 
-  // 2. Получаем значения фильтров.
-  // Поддерживаем filter[field][0], filter[field][1]
-  // и вложенный объект query.filter[field].
-  const getFilterValues = (field) => {
+  // Нормализация строк для сравнения названий
+  const normalizeText = value => {
+    return String(value ?? '')
+      .normalize('NFKC')
+      .trim()
+      .toLowerCase()
+      .replace(/ё/g, 'е')
+      .replace(/[«»"']/g, '')
+      .replace(/\s+/g, ' ')
+  }
+
+  // Получение значений фильтра из query
+  // Поддерживаем:
+  // filter[tag_id][0]=6
+  // filter[tag_id][1]=188
+  // filter[tag_id]=6
+  // filter[tag_id][1]=188
+  // filter[tag_id][]=6
+  // filter[tag_id][]=188
+  // filter[tag_id][0]=6&filter[tag_id][1]=188
+  const getFilterValues = field => {
     const pattern = new RegExp(
-      `^filter\\[${field}\\](?:\\[\\d+\\])?$`
+      `^filter\\[${field}\\](?:\\[\\d*\\])?$`
     )
 
     const flatValues = Object.entries(query)
       .filter(([key]) => pattern.test(key))
-      .flatMap(([, value]) =>
-        Array.isArray(value) ? value : [value]
-      )
+      .flatMap(([, value]) => {
+        return Array.isArray(value) ? value : [value]
+      })
 
+    // Поддержка вложенного объекта query.filter
     const nestedValue = query.filter?.[field]
 
     let nestedValues = []
@@ -42,33 +55,72 @@ export default defineEventHandler((event) => {
 
     return [...flatValues, ...nestedValues]
       .flat()
-      .filter((value) => value !== '' && value !== null && value !== undefined)
+      .filter(value => {
+        return value !== '' && value !== null && value !== undefined
+      })
+      .map(String)
   }
 
-  // 3. Параметры пагинации.
-  const pageValue = Number(query.page)
-  const limitValue = Number(query.per_page)
+  // Убираем дубликаты
+  const uniqueValues = values => {
+    return [...new Set(values)]
+  }
 
-  const page = Number.isInteger(pageValue) && pageValue > 0
-    ? pageValue
-    : 1
+  //---------------------------------------------- SOURCE DATA ---------------------------------------------------------
 
-  const per_page = Number.isInteger(limitValue) && limitValue > 0
-    ? Math.min(limitValue, 100)
-    : 6
+  // Получаем новости из mockNews
+  const sourceNews = Array.isArray(mockNews)
+    ? mockNews.flatMap(entry => {
+        return Array.isArray(entry?.data)
+          ? entry.data
+          : [entry]
+      })
+    : []
 
-  // 4. Фильтр по тегам.
-  // filter[tag_id][0]=206
+  // Справочник партнёров
+  const partners = Array.isArray(mockFilters?.partners)
+    ? mockFilters.partners
+    : []
+
+  // Сопоставляем ID партнёра с названием
+  const partnersMap = new Map(
+    partners.map(partner => [
+      String(partner.id),
+      normalizeText(partner.name),
+    ])
+  )
+
+  //---------------------------------------------- FILTER VALUES ---------------------------------------------------------
+
+  // Партнёры
+  const partnerIds = uniqueValues(
+    getFilterValues('partner_id')
+  )
+
+  const partnerNames = partnerIds
+    .map(id => partnersMap.get(id))
+    .filter(Boolean)
+
+  const selectedPartnerNames = new Set(partnerNames)
+
+  // Теги
   const tagIds = getFilterValues('tag_id')
     .map(Number)
-    .filter((id) => Number.isInteger(id) && id > 0)
+    .filter(id => Number.isInteger(id) && id > 0)
 
-  // Старый формат category/tag по slug тоже поддерживаем.
-  const category = String(query.category || query.tag || '')
-    .trim()
-    .toLowerCase()
+  const uniqueTagIds = uniqueValues(tagIds)
 
-  // 5. Фильтры по году, месяцу и дню.
+  // Годы
+  const years = [
+    ...(query.year ? [query.year] : []),
+    ...getFilterValues('year'),
+  ]
+    .map(Number)
+    .filter(year => Number.isInteger(year) && year > 0)
+
+  const uniqueYears = uniqueValues(years)
+
+  // Месяцы
   const monthNames = {
     january: 1,
     february: 2,
@@ -83,22 +135,6 @@ export default defineEventHandler((event) => {
     november: 11,
     december: 12,
 
-    january_ru: 1,
-    february_ru: 2,
-    march_ru: 3,
-    april_ru: 4,
-    may_ru: 5,
-    june_ru: 6,
-    july_ru: 7,
-    august_ru: 8,
-    september_ru: 9,
-    october_ru: 10,
-    november_ru: 11,
-    december_ru: 12
-  }
-
-  // Поддержка русских названий месяцев.
-  Object.assign(monthNames, {
     январь: 1,
     февраль: 2,
     март: 3,
@@ -110,11 +146,11 @@ export default defineEventHandler((event) => {
     сентябрь: 9,
     октябрь: 10,
     ноябрь: 11,
-    декабрь: 12
-  })
+    декабрь: 12,
+  }
 
-  const parseMonth = (value) => {
-    const normalized = String(value).trim().toLowerCase()
+  const parseMonth = value => {
+    const normalized = normalizeText(value)
 
     if (monthNames[normalized]) {
       return monthNames[normalized]
@@ -127,69 +163,125 @@ export default defineEventHandler((event) => {
       : null
   }
 
-  const years = [
-    ...(query.year ? [query.year] : []),
-    ...getFilterValues('year')
-  ]
-    .map(Number)
-    .filter((year) => Number.isInteger(year) && year > 0)
-
   const months = [
     ...(query.month ? [query.month] : []),
-    ...getFilterValues('month')
+    ...getFilterValues('month'),
   ]
     .map(parseMonth)
-    .filter((month) => month !== null)
+    .filter(month => month !== null)
 
+  const uniqueMonths = uniqueValues(months)
+
+  // Дни — оставляем поддержку на будущее
   const days = [
     ...(query.day ? [query.day] : []),
-    ...getFilterValues('day')
+    ...getFilterValues('day'),
   ]
     .map(Number)
-    .filter((day) => Number.isInteger(day) && day >= 1 && day <= 31)
+    .filter(day => Number.isInteger(day) && day >= 1 && day <= 31)
 
-  // Убираем повторяющиеся значения фильтров.
-  const uniqueYears = [...new Set(years)]
-  const uniqueMonths = [...new Set(months)]
-  const uniqueDays = [...new Set(days)]
-  const uniqueTagIds = [...new Set(tagIds)]
+  const uniqueDays = uniqueValues(days)
 
-  // 6. Поиск.
-  const search = String(query.search || '')
-    .trim()
-    .toLowerCase()
+  // Старый формат фильтрации по slug категории
+  const category = normalizeText(query.category || query.tag || '')
 
-  // 7. Фильтрация новостей.
+  // Поиск
+  const search = normalizeText(query.search || '')
+
+  //---------------------------------------------- PAGINATION ---------------------------------------------------------
+
+  const pageValue = Number(query.page)
+  const limitValue = Number(query.per_page)
+
+  const page = Number.isInteger(pageValue) && pageValue > 0
+    ? pageValue
+    : 1
+
+  const per_page = Number.isInteger(limitValue) && limitValue > 0
+    ? Math.min(limitValue, 100)
+    : 6
+
+  //---------------------------------------------- FILTERING ---------------------------------------------------------
+
   let filtered = [...sourceNews]
 
-  // По ID тегов: достаточно совпадения хотя бы одного ID.
+  // 1. Фильтр по партнёрам
+  // Несколько партнёров работают по OR:
+  // достаточно совпадения хотя бы одного.
+  if (partnerIds.length) {
+    filtered = filtered.filter(item => {
+      // Если в новости есть прямой partner_id — используем его
+      const itemPartnerId =
+        item.partner_id ??
+        item.partner?.id
+
+      if (itemPartnerId != null) {
+        return partnerIds.includes(String(itemPartnerId))
+      }
+
+      // В mockNews используется partner_name,
+      // поэтому сопоставляем название с ID из справочника
+      const itemPartnerName = normalizeText(
+        item.partner_name ?? item.partner?.name
+      )
+
+      return (
+        itemPartnerName !== '' &&
+        selectedPartnerNames.has(itemPartnerName)
+      )
+    })
+  }
+
+  // 2. Фильтр по тегам
+  // Несколько тегов работают по OR.
   if (uniqueTagIds.length) {
-    filtered = filtered.filter((item) =>
-      Array.isArray(item.tags) &&
-      item.tags.some((tag) =>
-        uniqueTagIds.includes(Number(tag.id))
-      )
-    )
+    filtered = filtered.filter(item => {
+      if (!Array.isArray(item.tags)) return false
+
+      return item.tags.some(tag => {
+        const tagId = typeof tag === 'object'
+          ? Number(tag.id)
+          : Number(tag)
+
+        return uniqueTagIds.includes(tagId)
+      })
+    })
   }
 
-  // По slug категории, если slug присутствует в данных.
+  // 3. Фильтр по slug категории
   if (category) {
-    filtered = filtered.filter((item) =>
-      Array.isArray(item.tags) &&
-      item.tags.some((tag) =>
-        String(tag.slug || '').toLowerCase() === category
-      )
-    )
+    filtered = filtered.filter(item => {
+      if (!Array.isArray(item.tags)) return false
+
+      return item.tags.some(tag => {
+        return normalizeText(tag.slug) === category
+      })
+    })
   }
 
-  // По дате публикации: YYYY-MM-DD.
-  if (uniqueYears.length || uniqueMonths.length || uniqueDays.length) {
-    filtered = filtered.filter((item) => {
-      if (!item.date) return false
+  // 4. Фильтр по дате
+  // Годы работают по OR.
+  // Месяцы работают по OR.
+  // Но год и месяц между собой работают по AND.
+  if (
+    uniqueYears.length ||
+    uniqueMonths.length ||
+    uniqueDays.length
+  ) {
+    filtered = filtered.filter(item => {
+      const dateValue = item.date || item.created_at
 
-      const [itemYear, itemMonth, itemDay] = item.date
-        .split('-')
-        .map(Number)
+      if (!dateValue) return false
+
+      const match = String(dateValue).match(
+        /^(\d{4})-(\d{1,2})-(\d{1,2})/
+      )
+
+      if (!match) return false
+
+      const itemYear = Number(match[1])
+      const itemMonth = Number(match[2])
+      const itemDay = Number(match[3])
 
       if (
         uniqueYears.length &&
@@ -216,9 +308,9 @@ export default defineEventHandler((event) => {
     })
   }
 
-  // По названию, SEO и названиям тегов.
+  // 5. Поиск по новостям
   if (search) {
-    filtered = filtered.filter((item) => {
+    filtered = filtered.filter(item => {
       const fields = [
         item.name,
         item.slug,
@@ -228,35 +320,49 @@ export default defineEventHandler((event) => {
         item.author,
         item.partner_name,
         ...(Array.isArray(item.tags)
-          ? item.tags.map((tag) => tag.name)
-          : [])
+          ? item.tags.map(tag => {
+              return typeof tag === 'object' ? tag.name : tag
+            })
+          : []),
       ]
 
-      return fields.some((value) =>
-        String(value || '').toLowerCase().includes(search)
-      )
+      return fields.some(value => {
+        return normalizeText(value).includes(search)
+      })
     })
   }
 
-  // 8. Сортировка от новых новостей к старым.
-  filtered.sort((a, b) =>
-    String(b.date || '').localeCompare(String(a.date || '')) ||
-    Number(b.id || 0) - Number(a.id || 0)
-  )
+  //---------------------------------------------- SORTING ---------------------------------------------------------
 
-  // 9. Пагинация после всех фильтров.
+  // Сначала новые новости
+  filtered.sort((a, b) => {
+    return (
+      String(b.date || '').localeCompare(String(a.date || '')) ||
+      Number(b.id || 0) - Number(a.id || 0)
+    )
+  })
+
+  //---------------------------------------------- PAGINATED RESULT ---------------------------------------------------------
+
+  // Пагинация применяется после всех фильтров
   const total = filtered.length
   const offset = (page - 1) * per_page
+
   const data = filtered.slice(offset, offset + per_page)
+
+  const from = data.length ? offset + 1 : null
+  const to = data.length ? offset + data.length : null
 
   return {
     data,
+
     meta: {
       total,
       page,
       per_page,
-      to: offset + per_page,
-      hasMore: offset + per_page < total
-    }
+      from,
+      to,
+      hasMore: offset + data.length < total,
+    },
   }
 })

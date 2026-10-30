@@ -2,10 +2,15 @@ export const useNewsFilterStore = defineStore('newsFilter', () => {
   const route = useRoute()
   const router = useRouter()
 
-  // Состояние (State)
+  // Состояние
   const activeFilter = ref(null)
   const isModal = ref(false)
+
+  // Применённые фильтры
   const selectedFilters = ref([])
+
+  // Временные фильтры в модальном окне
+  const draftFilters = ref([])
 
   const filterOptions = ref([
     { name: 'Все', value: null },
@@ -14,145 +19,220 @@ export const useNewsFilterStore = defineStore('newsFilter', () => {
     { name: 'Дата', value: 'date' },
   ])
 
-  // Действия (Actions)
+  // Соответствие типов фильтров и параметров URL
+  const filterGroups = {
+    partner_id: 'partner_id',
+    tag_id: 'tag_id',
+    years: 'year',
+    months: 'month',
+  }
 
+  // Приводим все ID к строке для корректного сравнения
+  const normalizeId = id => String(id)
 
-  const updateFiltersQuery = () => {
+  // Обновление query-параметров
+  const updateFiltersQuery = async () => {
     const query = { ...route.query }
-  
-    const groups = {
-      partner_id: 'partner_id',
-      tag_id: 'tag_id',
-      years: 'year',
-      months: 'month',
-    }
-  
-    // Удаляем старые фильтры
-    Object.values(groups).forEach(group => {
+
+    // Удаляем предыдущие параметры фильтров
+    Object.values(filterGroups).forEach(param => {
       Object.keys(query).forEach(key => {
-        if (key.startsWith(`filter[${group}]`)) {
+        if (key.startsWith(`filter[${param}]`)) {
           delete query[key]
         }
       })
     })
-  
+
     // Добавляем актуальные фильтры
-    for (const [type, param] of Object.entries(groups)) {
+    Object.entries(filterGroups).forEach(([type, param]) => {
       const ids = [
         ...new Set(
           selectedFilters.value
             .filter(filter => filter.type === type)
-            .map(filter => filter.id)
+            .map(filter => normalizeId(filter.id))
         ),
       ]
-  
+
       ids.forEach((id, index) => {
         query[`filter[${param}][${index}]`] = id
       })
-    }
-  
+    })
+
+    // При изменении фильтров начинаем с первой страницы
     query.page = 1
     query.per_page = 6
-  
-    router.push({ query })
+
+    await router.push({ query })
   }
 
-  const syncFiltersFromQuery = (query, dictionaries) => {
+  // Восстановление фильтров из URL
+  const syncFiltersFromQuery = (query, dictionaries = {}) => {
     const typeMap = {
       partner_id: {
         type: 'partner_id',
-        options: dictionaries.partners,
+        options: dictionaries.partners || [],
       },
       tag_id: {
         type: 'tag_id',
-        options: dictionaries.tags,
+        options: dictionaries.tags || [],
       },
       year: {
         type: 'years',
-        options: dictionaries.years,
+        options: dictionaries.years || [],
       },
       month: {
         type: 'months',
-        options: dictionaries.months,
+        options: dictionaries.months || [],
       },
     }
-  
+
+    const filterQueryEntries = Object.entries(query).filter(([key]) => {
+      return /^filter\[(partner_id|tag_id|year|month)\]\[\d+\]$/.test(key)
+    })
+
+    // Если фильтры есть в URL, но справочники ещё не загружены,
+    // не затираем ранее восстановленное состояние.
+    const dictionariesAreReady = filterQueryEntries.every(([key]) => {
+      const match = key.match(
+        /^filter\[(partner_id|tag_id|year|month)\]\[\d+\]$/
+      )
+
+      return typeMap[match[1]].options.length > 0
+    })
+
+    if (filterQueryEntries.length && !dictionariesAreReady) {
+      return
+    }
+
     const restoredFilters = []
-  
-    Object.entries(query).forEach(([key, value]) => {
+
+    filterQueryEntries.forEach(([key, value]) => {
+      if (value == null) return
+
       const match = key.match(
         /^filter\[(partner_id|tag_id|year|month)\]\[(\d+)\]$/
       )
-  
-      if (!match || value == null) return
-  
+
+      if (!match) return
+
       const config = typeMap[match[1]]
       const ids = Array.isArray(value) ? value : [value]
-  
+
       ids.forEach(id => {
-        const option = config.options?.find(
-          item => String(item.id) === String(id)
-        )
-  
+        const normalizedId = normalizeId(id)
+
+        const option = config.options.find(item => {
+          return normalizeId(item.id) === normalizedId
+        })
+
         if (!option) return
-  
+
+        // Не добавляем дубликаты
+        const alreadyExists = restoredFilters.some(item => {
+          return (
+            item.type === config.type &&
+            item.id === normalizedId
+          )
+        })
+
+        if (alreadyExists) return
+
         restoredFilters.push({
           type: config.type,
-          id: String(option.id),
+          id: normalizedId,
           name: option.name,
         })
       })
     })
-  
+
     selectedFilters.value = restoredFilters
-  }
 
-  const clearFilters = () => {
-    selectedFilters.value = []
-    updateFiltersQuery()
-  }
-  
-  const deleteFilters = (id) => {
-    const indx = selectedFilters.value.findIndex(
-      item => item?.id === id
-    )
-
-    if (indx !== -1) {
-      selectedFilters.value.splice(indx, 1)
-      updateFiltersQuery()
+    // Не перезаписываем черновик, пока пользователь работает в модалке
+    if (!isModal.value) {
+      draftFilters.value = restoredFilters.map(item => ({ ...item }))
     }
   }
 
-  const openModalFilter = (value) => {
-    if(value == null) {
-      activeFilter.value = value
+  // Очистка всех фильтров
+  const clearFilters = async () => {
+    selectedFilters.value = []
+    draftFilters.value = []
+
+    await updateFiltersQuery()
+  }
+
+  // Удаление конкретного применённого фильтра
+  const deleteFilters = async (type, id) => {
+    const normalizedId = normalizeId(id)
+
+    selectedFilters.value = selectedFilters.value.filter(item => {
+      return !(
+        item.type === type &&
+        normalizeId(item.id) === normalizedId
+      )
+    })
+
+    // Синхронизируем черновик с применёнными фильтрами
+    draftFilters.value = selectedFilters.value.map(item => ({ ...item }))
+
+    await updateFiltersQuery()
+  }
+
+  // Открытие модального окна
+  const openModalFilter = value => {
+    // Кнопка «Все»
+    if (value == null) {
       clearFilters()
       return
     }
-    isModal.value = true
+
+    // При каждом открытии начинаем с применённых фильтров
+    draftFilters.value = selectedFilters.value.map(item => ({ ...item }))
+
     activeFilter.value = value
+    isModal.value = true
   }
 
+  // Закрытие без применения изменений
   const closeModalFilter = () => {
+    // Отменяем временный выбор
+    draftFilters.value = selectedFilters.value.map(item => ({ ...item }))
+
     isModal.value = false
     activeFilter.value = null
-    clearFilters()
-  }
-  
-  const checkedFilter = (type, id, name) => {
-    const index = selectedFilters.value.findIndex(
-      filter => filter.type === type && filter.id === id
-    ) 
-    if (index !== -1) {
-      selectedFilters.value.splice(index, 1)
-    } else {
-      selectedFilters.value.push({type, id, name})
-    }
   }
 
-  const onApplyFilters = () => {
+  // Выбор фильтра внутри модального окна
+  const checkedFilter = (type, id, name) => {
+    const normalizedId = normalizeId(id)
+
+    const index = draftFilters.value.findIndex(item => {
+      return (
+        item.type === type &&
+        normalizeId(item.id) === normalizedId
+      )
+    })
+
+    if (index !== -1) {
+      draftFilters.value.splice(index, 1)
+      return
+    }
+
+    draftFilters.value.push({
+      type,
+      id: normalizedId,
+      name,
+    })
+  }
+
+  // Применение временных фильтров
+  const onApplyFilters = async () => {
+    selectedFilters.value = draftFilters.value.map(item => ({ ...item }))
+
     isModal.value = false
-    updateFiltersQuery()
+    activeFilter.value = null
+
+    await updateFiltersQuery()
   }
 
   return {
@@ -160,12 +240,14 @@ export const useNewsFilterStore = defineStore('newsFilter', () => {
     isModal,
     filterOptions,
     selectedFilters,
+    draftFilters,
+
     syncFiltersFromQuery,
     clearFilters,
     deleteFilters,
     checkedFilter,
     openModalFilter,
-    closeModalFilter, 
-    onApplyFilters
+    closeModalFilter,
+    onApplyFilters,
   }
 })

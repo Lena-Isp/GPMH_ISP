@@ -3,48 +3,61 @@ const props = defineProps({
   name: String,
   id: [String, Number],
   link: String,
-  hoverColor: { 
-    type: String, 
-    default: 'transparent' 
+  filterType: String,
+
+  hoverColor: {
+    type: String,
+    default: 'transparent',
   },
-});
-
-const newsFilterStore = useNewsFilterStore()
-const { selectedFilters } = storeToRefs(newsFilterStore)
-
-const isActive = computed(() => {
-  if (props.link) return false
-  return selectedFilters.value?.some(
-    item => item.id === props.id
-  )
 })
 
-const handleClick = (event) => {
+const newsFilterStore = useNewsFilterStore()
+
+const { draftFilters } = storeToRefs(newsFilterStore)
+
+// Проверяем активность чипа по типу и ID
+const isActive = computed(() => {
+  if (props.link || !props.filterType) return false
+
+  return draftFilters.value.some(item => {
+    return (
+      item.type === props.filterType &&
+      String(item.id) === String(props.id)
+    )
+  })
+})
+
+const handleClick = event => {
   if (props.link) return
+
   event.preventDefault()
 }
 </script>
 
 <template>
-<NuxtLinkLocale 
-  v-if="name"
-  class="chips" 
-  :class="{ 'chips--active': isActive }" 
-  :to="link || undefined" 
-  @click="handleClick"
->
-  <Text
-    :variant="[$typographyVariant.T_SMALL_16_MOB, $typographyVariant.T_BIG_36]"
-    :font="$font.TTSMALLS_REGULAR"
-    :color="$color.WHITE"
-    class="chips__text"
-  > {{ name }}</Text>
-  <span class="chips__bg"
-    :style="{ 
-      'background-color': hoverColor
-    }"
-/>
-</NuxtLinkLocale>
+  <NuxtLinkLocale
+    v-if="name"
+    class="chips"
+    :class="{ 'chips--active': isActive }"
+    :to="link || undefined"
+    @click="handleClick"
+  >
+    <Text
+      :variant="[$typographyVariant.T_SMALL_16_MOB, $typographyVariant.T_BIG_36]"
+      :font="$font.TTSMALLS_REGULAR"
+      :color="$color.WHITE"
+      class="chips__text"
+    >
+      {{ name }}
+    </Text>
+
+    <span
+      class="chips__bg"
+      :style="{
+        'background-color': hoverColor
+      }"
+    />
+  </NuxtLinkLocale>
 </template>
 
 <style lang="scss" scoped>
@@ -58,16 +71,20 @@ const handleClick = (event) => {
   overflow: hidden;
   text-transform: uppercase;
   transition: border-radius 0.2s ease;
+
   &:hover {
     cursor: pointer;
     border-radius: 0;
+
     .chips__bg {
       opacity: 1;
       border-radius: 0;
     }
   }
+
   &--active {
     border-radius: 0;
+
     .chips__bg {
       opacity: 1;
       border-radius: 0;
