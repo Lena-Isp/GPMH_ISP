@@ -2,6 +2,45 @@ export const mockNews = [
   {
     "data": [
         {
+            id: 8855,
+            name: 'В RUTUBE TECH рассказали о скрытых рисках разработки с помощью ИИ',
+            slug: 'v-rutube-tech-rasskazali-o-skrytyx-riskax-razrabotki-s-pomoshhiu-ii',
+            date: '2026-10-29',
+            author: null,
+            preview: 'https://imgtext.ru/600x400.png?text=preview_png&bg=002864&color=ffffff&size=58',
+            preview_webp: 'https://imgtext.ru/600x400.webp?text=preview_webp&bg=002864&color=ffffff&size=40',
+            preview_alt: 'Волонтёры «Газпром-Медиа Холдинга» превью',
+            image: 'https://imgtext.ru/600x400.png?text=image_png&bg=002864&color=ffffff&size=58',
+            image_webp: 'https://imgtext.ru/600x400.webp?text=image_webp&bg=002864&color=ffffff&size=40',
+            image_alt: 'Волонтёры «Газпром-Медиа Холдинга» обложка',
+            image_mobile: 'https://imgtext.ru/600x400.png?text=image_mobile&bg=002864&color=ffffff&size=40',
+            thumb: 'https://imgtext.ru/600x400.png?text=thumb&bg=002864&color=ffffff&size=40',
+            thumb_webp: 'https://imgtext.ru/600x400.webp?text=thumb_webp&bg=002864&color=ffffff&size=40',
+            video: null,
+            gallery: [],
+            files: [],
+            video_gallery: [],
+            preview_title: '',
+            partner_name: 'RUTUBE',
+            last_news: [],
+            created_at: '2026-10-29T08:31:39.000000Z',
+            tags: [
+                {
+                id: 83,
+                name: 'RUTUBE'
+                }
+            ],
+            seo: {
+                title: 'В RUTUBE TECH рассказали о скрытых рисках разработки с помощью ИИ',
+                description: 'Быстрое создание программных продуктов с помощью искусственного интеллекта может приводить к накоплению ошибок и увеличению затрат на дальнейшее сопровождение. Об этом заявил технический директор RUTUBE TECH (объединенного технологического хаба цифровых',
+                keywords: ''
+            },
+            partner_logo: 'https://www.gazprom-media.com/storage/uploads/partner/logo/0/13/536/13536/рутуб.png',
+            partner_logo_webp: 'https://www.gazprom-media.com/storage/uploads/partner/logo/0/13/536/13536/рутуб-webp.webp',
+            partner_logo_hover: 'https://www.gazprom-media.com/storage/uploads/partner/logo_hover/0/8/309/8309/5d5722d42221f805ade135bc900cbce8.png',
+            partner_logo_hover_webp: 'https://www.gazprom-media.com/storage/uploads/partner/logo_hover/0/8/309/8309/5d5722d42221f805ade135bc900cbce8-webp.webp'
+        },
+        {
             "id": 8853,
             "name": "Эксперт Жуков рассказал о защите ИИ-моделей от киберугроз",
             "slug": "ekspert-zukov-rasskazal-o-zashhite-ii-modelei-ot-kiberugroz",

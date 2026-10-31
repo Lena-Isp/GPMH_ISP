@@ -14,8 +14,8 @@ const { getArticleComponent } = useArticleComponent()
 const newsStore = useNewsStore()
 const { currentArticle } = storeToRefs(newsStore)
 const { data: result, error } = await useAsyncData(
-  `news-${route.params.id}-${locale.value}`, 
-  () => newsStore.fetchNewsBySlug(route.params.id)
+  `news-${route?.params?.id}-${locale?.value}`, 
+  () => newsStore.fetchNewsBySlug(route?.params?.slug)
 )
 
 //редирект для страницы, где нет английской версии
