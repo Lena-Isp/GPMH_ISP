@@ -63,7 +63,7 @@ defineExpose({
       <SwiperSlide v-for="(slide, idx) in sectionData?.config?.slider?.slides" :key="slide.id || idx">
         <div class="article-slider__content">
           <picture>
-            <source :srcset="slide?.imageWebp" type="image/webp">
+            <source :srcset="slide?.image_webp" type="image/webp">
             <img :src="slide?.image" :alt="slide?.preview_image" class="article-slider__img" width="100%" height="100%">
           </picture>
         </div>
