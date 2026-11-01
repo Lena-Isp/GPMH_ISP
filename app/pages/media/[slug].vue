@@ -9,6 +9,7 @@ const localePath = useLocalePath()
 
 //composables
 const { getArticleComponent } = useArticleComponent()
+const { getFormatted } = useFormattedDate()
 
 // Загрузка данных для страницы
 const newsStore = useNewsStore()
@@ -50,7 +51,7 @@ if (error.value) {
       :variant="$typographyVariant.T_SMALL_20"
       :font="$font.MAREGRAPHE_REGULAR"
       :color="$color.GRAY"
-    >{{ currentArticle?.date }}</Text>
+    >{{ getFormatted(currentArticle?.date) }}</Text>
   </div>
   <div class="news-page__header">
     <Text

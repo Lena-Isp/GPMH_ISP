@@ -193,17 +193,17 @@
   justify-content: center;
   padding: em(80) 0;
   position: relative;
-  @include mq('desktop') {
-  padding: em(100) 0;
-    &::after {
-      content: "";
-      width: 100%;
-      height: 1px;
-      background-color: var(--color-GRAY_LINE);
-      position: absolute;
-      bottom: -1px;
-      left: 0;
+    @include mq('desktop') {
+      padding: em(100) 0;
+      &::after {
+        content: "";
+        width: 100%;
+        height: 1px;
+        background-color: var(--color-GRAY_LINE);
+        position: absolute;
+        bottom: -1px;
+        left: 0;
+      }
     }
-  }
 }
 </style>

@@ -5,17 +5,7 @@ const props = defineProps({
   numb: Number
 })
 
-const formatted = computed(() => {
-  if (!props.news?.created_at) return ''
-
-  return new Date(props.news.created_at)
-    .toLocaleString('ru-RU', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    })
-    .replace(' г.', '')
-})
+const { getFormatted } = useFormattedDate()
 
 const imageLoading = computed(() => {
   return props.numb === 0 ? 'eager' : 'lazy'
@@ -52,7 +42,7 @@ const imagePriority = computed(() => {
         :font="$font.TTSMALLS_REGULAR"
         :color="$color.GRAY"
       >
-        {{ formatted }}
+        {{ getFormatted(news?.created_at) }}
       </Text>
     </div>
 
