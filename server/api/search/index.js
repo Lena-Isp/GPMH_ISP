@@ -26,7 +26,7 @@ export default defineEventHandler((event) => {
   const pageValue = Number(query.page)
   const perPageValue = Number(query.per_page)
 
-  const page = Number.isInteger(pageValue) && pageValue > 0
+  const current_page = Number.isInteger(pageValue) && pageValue > 0
     ? pageValue
     : 1
 
@@ -93,7 +93,7 @@ export default defineEventHandler((event) => {
 
   // Пагинация после поиска и сортировки
   const total = filtered.length
-  const offset = (page - 1) * per_page
+  const offset = (current_page - 1) * per_page
   const data = filtered.slice(offset, offset + per_page)
 
   const from = data.length ? offset + 1 : null
@@ -104,7 +104,7 @@ export default defineEventHandler((event) => {
 
     meta: {
       total,
-      page,
+      current_page,
       per_page,
       from,
       to,

@@ -54,7 +54,7 @@ export const useSearchStore = defineStore('search', () => {
 
     searchList.value = data
 
-    currentPage.value = response.meta.page
+    currentPage.value = response.meta.current_page
     total.value = response.meta.total
     perPage.value = response.meta.per_page
 
@@ -80,7 +80,7 @@ export const useSearchStore = defineStore('search', () => {
       
       searchList.value.push(...response?.data)
   
-      currentPage.value = response.meta.page
+      currentPage.value = response.meta.current_page
       total.value = response.meta.total
       perPage.value = response.meta.per_page
   
@@ -89,7 +89,6 @@ export const useSearchStore = defineStore('search', () => {
     } finally {
       loading.value = false
     }
-
   }
 
 
