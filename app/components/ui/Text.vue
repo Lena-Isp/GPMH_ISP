@@ -8,6 +8,9 @@
 -->
 
 <script setup>
+defineOptions({
+  inheritAttrs: false,
+})
 const props = defineProps({
   tag: String, //для подставления любого тега
   to: String, //ссылка для nuxt-link
@@ -22,6 +25,7 @@ const props = defineProps({
     v-if="tag === 'NuxtLinkLocale'"
     :to="to"
     :class="variant"
+    v-bind="$attrs"
     :style="{
       color: color,
       'font-family': font,
@@ -33,6 +37,7 @@ const props = defineProps({
     v-else
     :is="tag || 'span'"
     :class="variant"
+    v-bind="$attrs"
     :style="{
       color: color,
       'font-family': font,

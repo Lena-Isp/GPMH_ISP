@@ -38,6 +38,16 @@ const activeItemId = computed(() => {
   const currentPath = '/'+route?.name?.slice(0, -5)
   return NAVIGATION.find(item => currentPath?.includes(item?.slug))?.id
 })
+
+const currentPartnerId = computed(() => String(route.params.id || ''))
+
+const containsCurrentPartner = (item) => {
+  const children = [
+    ...(item.channels || []),
+    ...(item.assetsDeep || [])
+  ]
+  return children.some(child => String(child.slug) === currentPartnerId.value || containsCurrentPartner(child))
+}
 </script>
 
 <template>
@@ -46,7 +56,7 @@ const activeItemId = computed(() => {
       v-for="navItem in partnerNav" 
       :key="navItem.id" 
       :item="navItem"
-      :class="['navigation__item', {'navigation__item--link-active':navItem.id === activeItemId }]"
+      :class="['navigation__item', {'navigation__item--link-active': navItem.id === activeItemId }]"
       @mouseenter="onOpen"
     >
       <Text
@@ -80,6 +90,7 @@ const activeItemId = computed(() => {
             :variant="$typographyVariant.T_LINKS_20"
             :font="$font.TTSMALLS_REGULAR"
             class="navigation__link navigation__link--deep"
+            :class="{'navigation__link--active': containsCurrentPartner(navItemDeep)}"
           >{{ navItemDeep.static ? $t(navItemDeep.name) : navItemDeep?.name }}</Text>
         </NuxtLinkLocale>
         </template>
@@ -186,6 +197,9 @@ const activeItemId = computed(() => {
         color: var(--color-C_2101);
       }
     }
+  }
+  &--active {
+    color: var(--color-C_2101);
   }
 }
 

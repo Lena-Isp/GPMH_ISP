@@ -15,56 +15,153 @@ const menu = useMenuStore()
 
 const theme = computed(() => route.meta.theme || 'dark')
 
-const prefix = `/${locale.value}`
+const isOpenDepth = ref(false)
 
-const isOpenDepth = ref(false)//для вертикального меню
+const isOpenDepthDesc = ref(false)
 
-const isOpenDepthDesc = ref(false)//для вертикального меню
+
+const currentPartnerId = computed(() => String(route.params.id || ''))
+
+const containsCurrentPartner = (item) => {
+  const children = [
+    ...(item.channels || []),
+    ...(item.assetsDeep || [])
+  ]
+  return children.some(child => String(child.slug) === currentPartnerId.value || containsCurrentPartner(child))
+}
+
+const normalizeHash = (hash = '') => {
+  try {
+    return decodeURIComponent(String(hash).replace(/^#/, '')).trim()
+  } catch {
+   return String(hash).replace(/^#/, '').trim()
+  }
+}
+
+// Убираем префикс текущей локали из адреса страницы.
+const currentPath = computed(() => {
+  const localePrefix = `/${locale.value}`
+  if (route.path === localePrefix) return '/'
+  return route.path.startsWith(`${localePrefix}/`)
+    ? route.path.slice(localePrefix.length)
+    : route.path
+})
+
+// Получаем реальный адрес пункта меню.
+const getItemPath = (item) => {
+  if (item.external) return null
+  if (item.static || props.depth === 0) item.slug
+  return props.links || item.slug
+}
+
+// Проверяем активность пункта меню.
+const isItemActive = (item) => {
+  const target = getItemPath(item)
+
+  if (!target) return false
+
+  const [targetPath, ...hashParts] = target.split('#')
+  const targetHash = hashParts.join('#')
+
+  // Для категорий активность определяется по hash.
+  if (targetHash) {
+    return (
+      currentPath.value === targetPath &&
+      normalizeHash(route.hash) === normalizeHash(targetHash)
+    )
+  }
+
+  // Для обычных страниц учитываем вложенные маршруты.
+  return (
+    currentPath.value === targetPath ||
+    currentPath.value.startsWith(`${targetPath}/`)
+  )
+}
+
+// Первый уровень отвечает за подчёркивание родительского пункта.
+// Вложенные уровни получают цвет активной цепочки.
+const isActiveBranch = computed(() => {
+  if (isItemActive(props.item)) return true
+  // Проверяем категорию и её вложенные элементы.
+  if (props.depth === 1 && currentPartnerId.value) {
+    return containsCurrentPartner(props.item)
+  }
+  return false
+})
+
+const isActiveLink = computed(() => {
+  return props.depth > 0 && isActiveBranch.value
+})
+
+const itemTo = computed(() => getItemPath(props.item))
+
+const getChildLink = (child) => {
+  if (child.external || child.static) {
+    return child.slug
+  }
+  if (props.depth > 1) {
+    return `${props.links}#${child.slug}`
+  }
+  if (props.depth > 0) {
+    return `/business/partner/${child.slug}`
+  }
+  return `/business#${child.slug}`
+}
 
 const toggleDepth = () => {
   if (props.mode === 'vertical' && props.item.channels) {
     isOpenDepth.value = !isOpenDepth.value
   }
 }
+
 const setOverlay = (val) => {
   isOpenDepthDesc.value = val
 }
+
 const onEnter = () => {
   if (props.mode === 'horizontal' && props.item.channels) {
     setOverlay(true)
   }
-  //menu.isDesktopMenuOpen = true
 }
+
 const onLeave = (depth) => {
-  if (props.mode === 'horizontal' && depth == 0) {
-    //menu.isDesktopMenuOpen = false
+  if (props.mode === 'horizontal' && depth === 0) {
     setOverlay(false)
   }
 }
 </script>
 
 <template>
-  <div 
+  <div
     :class="[
-      depth > 0 ? `nav-item nav-item--depth-${depth + 1}` : `nav-item nav-item--${theme} is-${mode}`,
-      {'nav-item--active': prefix+item.to == route.path },
-      classes
+      depth > 0
+        ? `nav-item nav-item--depth-${depth + 1}`
+        : `nav-item nav-item--${theme} is-${mode}`,
+      {
+        'nav-item--active': depth === 0 && isActiveBranch
+      },
+    classes
     ]"
     :style="{ paddingLeft: depth == 2 ? '46px' : false }"
-    @mouseenter="onEnter" 
+    @mouseenter="onEnter"
     @mouseleave="onLeave(depth)"
   >
     <!-- Ссылка (без вложенности) -->
     <Text
       v-if="!item.channels"
       tag="NuxtLinkLocale"
-      :to="depth > 1 ? links : item?.slug"
-      class="nav-link"
+      :to="itemTo"
+      :class="[
+        'nav-link',
+        { 'nav-link--active': isActiveLink }
+      ]"
       :target="item.external ? '_blank' : undefined"
       :rel="item.external ? 'noopener noreferrer' : undefined"
-      :variant="depth > 0 ? $typographyVariant.T_LINKS_20 : $typographyVariant.T_MENU"
+      :variant="depth > 0
+        ? $typographyVariant.T_LINKS_20
+        : $typographyVariant.T_MENU"
       :font="$font.TTSMALLS_REGULAR"
-    > {{ $t(item.name) }}</Text>
+    >{{ $te(item.name) ? $t(item.name) : item.name }}</Text>
 
    <!-- Подменю -->
     <template v-else>
@@ -79,13 +176,18 @@ const onLeave = (depth) => {
           > {{ item?.assetsCount }}</Text>
           <Text
             tag="NuxtLinkLocale"
-            :to=" depth > 0 ? links : item.slug"
-            active-class="nav-link--active"
+            :to="itemTo"
+            :class="[
+              'nav-link',
+              { 'nav-link--active': isActiveLink }
+            ]"
             :target="item.external ? '_blank' : undefined"
             :rel="item.external ? 'noopener noreferrer' : undefined"
-            :variant="depth > 0 ? $typographyVariant.T_LINKS_20 : $typographyVariant.T_MENU"
+            :variant="depth > 0
+              ? $typographyVariant.T_LINKS_20
+              : $typographyVariant.T_MENU"
             :font="$font.TTSMALLS_REGULAR"
-          > {{ $t(item.name) }}</Text>
+            >{{ $te(item.name) ? $t(item.name) : item.name }}</Text>
         </div>
         <button @click="toggleDepth" class="nav-toogle-button" v-if="item.channels?.length">
           <IconSvg
@@ -111,7 +213,10 @@ const onLeave = (depth) => {
             :links="depth > 1 ? `${links}#${child.slug}` : 
                     depth > 0
                       ? `/business/partner/${child.slug}`
-                      : `/business#${child.slug}`"
+                      : item.slug == '/business'
+                        ? `/business#${child?.slug}`
+                        : `${child?.slug}`
+            "
             classes="channels-deep"
           />
           <NavNode
@@ -120,7 +225,7 @@ const onLeave = (depth) => {
             :item="child" 
             :depth="depth + 1"
             :mode="mode"
-            :links="`/business/partner/${child.slug}`"
+            :links="`/business/partner/${child?.slug}`"
             classes="assetsDeep"
           />
         </div>
@@ -285,5 +390,13 @@ svg.arrow-rotated g {
 .submenu-enter-from, .submenu-leave-to {
   max-height: 0;
   opacity: 0;
+}
+
+.nav-item--active > .nav-toogle .nav-link, .router-link-active {
+  border-bottom: 2px solid var(--color-C_2101);
+}
+
+:deep(.nav-link--active) {
+  color: var(--color-C_2101);
 }
 </style>
