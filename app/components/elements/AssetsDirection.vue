@@ -16,6 +16,8 @@ const props = defineProps({
   }
 });
 
+const localePath = useLocalePath()
+
 // Добавление ячеек, если они не кратны 3
 const fullItems = computed(() => {
   const currentLength = props?.rawItems?.length;
@@ -46,7 +48,10 @@ const fullItems = computed(() => {
       :class="[`grid-item--${value.slug}`, { 'is-empty': value?.isEmpty }]"
       :to="variant == 'bg' 
         ? !value?.isEmpty && `#${value.slug}` || ''
-        : !value?.isEmpty && `business/partner/${assetsDeepSlug}${value?.slug}` || ''
+        : !value?.isEmpty && localePath({
+                              path: `/business/partner/${assetsDeepSlug || value.slug}`, 
+                              hash: assetsDeepSlug ? `#${value.slug}` : ''
+                             }) || ''
       "
     >
       <Text

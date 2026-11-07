@@ -4,6 +4,8 @@ import { NAVIGATION } from '~/constants/navigation'
 const partnerStore = usePartnerStore()
 const menu = useMenuStore()
 const route = useRoute()
+const router = useRouter()
+const { locale } = useI18n();
 
 const theme = computed(() => route.meta.theme || 'dark')
 
@@ -24,15 +26,27 @@ const onOpen = () => {
 const onLeave = () => {
   menu.isDeskHide = false
 }
+
+const isActiveLine = (item) => {
+  const currentPath = route.name
+  const itemPath = (item?.slug +'__'+locale?.value)?.slice(1)
+  if (currentPath === itemPath) return true
+  return false
+}
+
+const activeItemId = computed(() => {
+  const currentPath = '/'+route?.name?.slice(0, -5)
+  return NAVIGATION.find(item => currentPath?.includes(item?.slug))?.id
+})
 </script>
 
 <template>
-  <div :class="`navigation navigation--${theme}`" @mouseleave="onLeave">
+  <div :class="[`navigation navigation--${theme}`]" @mouseleave="onLeave">
     <div
       v-for="navItem in partnerNav" 
       :key="navItem.id" 
       :item="navItem"
-      class="navigation__item"
+      :class="['navigation__item', {'navigation__item--link-active':navItem.id === activeItemId }]"
       @mouseenter="onOpen"
     >
       <Text
@@ -53,6 +67,7 @@ const onLeave = () => {
         >
         <NuxtLinkLocale 
           :to="navItemDeep.static ? navItemDeep.slug : `/business#${navItemDeep.slug}`"
+          :active-class="navItemDeep.static ? 'router-link-active' : 'business-link-active'"
           class="navigation__link-wrap"
         >
           <Text
@@ -87,13 +102,15 @@ const onLeave = () => {
     display: flex;
     align-self: stretch;
     align-items: center;
-    margin-left: calc(129/1920 * 100%);
+    margin-left: calc(130/1920 * 100%);
   }
   &--light {
     .navigation__deep {
       color: var(--color-WHITE);
     }
-
+  }
+  &--line {
+    border-bottom: 1px solid #fff;
   }
 }
 
@@ -117,6 +134,7 @@ const onLeave = () => {
     transform: translateY(em(7)) scaleY(0);
     transition: transform .3s ease-in-out;
   }
+
   &--active, &:hover {
     overflow: visible;
     &::before {
@@ -132,12 +150,18 @@ const onLeave = () => {
       color: var(--color-WHITE);
     }
   }
+  &--link-active {
+    &::before {
+      transform: translateY(0) scaleY(1);
+    }
+  }
 }
+
 
 .navigation__deep {
   position: absolute;
   top: 100%;
-  padding-top: em(44);
+  padding-top: em(40);
   width: max-content;
   opacity: 0;
   transition: opacity .3s ease-in-out;
@@ -146,7 +170,10 @@ const onLeave = () => {
 
 .navigation__link-wrap {
   display: block;
-  padding-bottom: em(22);
+  padding-bottom: em(25);
+  &.router-link-active {
+    color: var(--color-C_2101);
+  }
 }
 
 .navigation__link {
@@ -164,7 +191,7 @@ const onLeave = () => {
 
 .navigation__count {
   position: absolute;
-  right: calc(100% + em(15));
+  right: calc(100% + em(16));
   color: var(--color-C_2101);
 }
 

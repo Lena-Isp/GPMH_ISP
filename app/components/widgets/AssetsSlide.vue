@@ -130,7 +130,7 @@ onUnmounted(() => {
             >{{ assetDeep.name }}</Text>
             <AssetsDirection
               :rawItems="assetDeep?.channels"
-              :assetsDeepSlug="`${assetDeep.slug}#`"
+              :assetsDeepSlug="assetDeep?.slug"
               variant="line"
             />
           </template>

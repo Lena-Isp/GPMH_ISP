@@ -50,7 +50,7 @@ const onLeave = (depth) => {
       {'nav-item--active': prefix+item.to == route.path },
       classes
     ]"
-    :style="{ paddingLeft: depth > 0 ? '15px' : false }"
+    :style="{ paddingLeft: depth == 2 ? '46px' : false }"
     @mouseenter="onEnter" 
     @mouseleave="onLeave(depth)"
   >
@@ -58,7 +58,7 @@ const onLeave = (depth) => {
     <Text
       v-if="!item.channels"
       tag="NuxtLinkLocale"
-      :to="depth > 1 ? `/business/partner/${item?.slug}` : item?.slug"
+      :to="depth > 1 ? links : item?.slug"
       class="nav-link"
       :target="item.external ? '_blank' : undefined"
       :rel="item.external ? 'noopener noreferrer' : undefined"
@@ -69,47 +69,62 @@ const onLeave = (depth) => {
    <!-- Подменю -->
     <template v-else>
       <div class="nav-toogle">
-        <Text
-          tag="NuxtLinkLocale"
-          :to=" depth > 0 ? links : item.slug"
-          active-class="nav-link--active"
-          :target="item.external ? '_blank' : undefined"
-          :rel="item.external ? 'noopener noreferrer' : undefined"
-          :variant="depth > 0 ? $typographyVariant.T_LINKS_20 : $typographyVariant.T_MENU"
-          :font="$font.TTSMALLS_REGULAR"
-        > {{ $t(item.name) }}</Text>
+        <div class="nav-toogle__block">
+          <Text
+            :variant="$typographyVariant.T_LINKS_20"
+            :font="$font.TTSMALLS_REGULAR"
+            :color="$color.GRAY_LINE"
+            v-if="depth == 1"
+            class="nav-toogle__block-numb"
+          > {{ item?.assetsCount }}</Text>
+          <Text
+            tag="NuxtLinkLocale"
+            :to=" depth > 0 ? links : item.slug"
+            active-class="nav-link--active"
+            :target="item.external ? '_blank' : undefined"
+            :rel="item.external ? 'noopener noreferrer' : undefined"
+            :variant="depth > 0 ? $typographyVariant.T_LINKS_20 : $typographyVariant.T_MENU"
+            :font="$font.TTSMALLS_REGULAR"
+          > {{ $t(item.name) }}</Text>
+        </div>
         <button @click="toggleDepth" class="nav-toogle-button" v-if="item.channels?.length">
           <IconSvg
-            :name="$iconName.CROSS_MOB_MENU" 
+            :name="$iconName.CROSS_MOB_MENU"
             :size="[$iconSize.SMALL_CROSS_MOB, $iconSize.SMALL_CROSS]"
             class="arrow-rotated" :class="{ 'is-rotated': isOpenDepth }"
           />
         </button>
       </div>
-      <div 
-        v-if="(mode === 'horizontal' && isOpenDepthDesc) || (mode === 'vertical' && isOpenDepth)"
-        :class="['nav-wrap', `nav-wrap--depth-${(depth+1) + 1}`]"
-      >
-        <!-- РЕКУРСИЯ: Компонент вызывает сам себя -->
-        <NavNode 
-          v-for="child in item.channels" 
-          :key="child.id" 
-          :item="child " 
-          :depth="depth + 1"
-          :mode="mode"
-          :links="depth > 0 ? `/business/partner/${child.slug}` : `/business#${child.slug}`"
-          classes="channels-deep"
-        />
-        <NavNode
-          v-for="child in item.assetsDeep" 
-          :key="child.id" 
-          :item="child" 
-          :depth="depth + 1"
-          :mode="mode"
-          :links="`/business/partner/${child.slug}`"
-          classes="assetsDeep"
-        />
-      </div>
+      <Transition name="submenu">
+        <div 
+          v-if="(mode === 'horizontal' && isOpenDepthDesc) || (mode === 'vertical' && isOpenDepth)"
+          :class="['nav-wrap', `nav-wrap--depth-${(depth+1) + 1}`]"
+          class="submenu-transition"
+        >
+          <!-- РЕКУРСИЯ: Компонент вызывает сам себя -->
+          <NavNode 
+            v-for="child in item.channels" 
+            :key="child.id" 
+            :item="child " 
+            :depth="depth + 1"
+            :mode="mode"
+            :links="depth > 1 ? `${links}#${child.slug}` : 
+                    depth > 0
+                      ? `/business/partner/${child.slug}`
+                      : `/business#${child.slug}`"
+            classes="channels-deep"
+          />
+          <NavNode
+            v-for="child in item.assetsDeep" 
+            :key="child.id" 
+            :item="child" 
+            :depth="depth + 1"
+            :mode="mode"
+            :links="`/business/partner/${child.slug}`"
+            classes="assetsDeep"
+          />
+        </div>
+      </Transition>
     </template>
     <!-- End Подменю -->
   </div>
@@ -185,12 +200,9 @@ const onLeave = (depth) => {
 }
 .is-vertical .nav-item {
   padding-top: em(20);
-  &:first-child {
-    padding-top: em(30);
-  }
 }
 .is-vertical .nav-wrap {
-  margin-bottom: em(15);
+  //margin-bottom: em(15);
 }
 //end отступы
 
@@ -202,18 +214,35 @@ const onLeave = (depth) => {
     justify-content: space-between;
   }
 }
+.nav-toogle__block {
+  display: flex;
+  align-items: flex-start;
+  gap: em(20);
+}
+
+.nav-toogle__block-numb {
+  width: 24px;
+}
+
 .nav-toogle-button {
-   @include mq('desktop') {
+  display: inline-flex;
+  @include mq('desktop') {
     display: none;
   }
 }
 .arrow-rotated { 
   display: inline-block; 
-  transform: rotate(45deg);
   transition: transform .3s ease;
+  g {
+    stroke-width: 8px;
+  }
 }
+svg.arrow-rotated g {
+    stroke-width: 8px;
+}
+
 .arrow-rotated.is-rotated { 
-  transform: rotate(90deg); 
+  transform: rotate(135deg); 
 }
 
 .assetsDeep, .channelsDeep {
@@ -242,5 +271,19 @@ const onLeave = (depth) => {
     width: 300px;
     background-color: whitesmoke;
   }
+}
+
+.submenu-enter-active,.submenu-leave-active {
+  max-height: 500px;
+  opacity: 1;
+  overflow: hidden;
+  transition:
+  max-height 0.35s ease,
+  opacity 0.25s ease;
+}
+
+.submenu-enter-from, .submenu-leave-to {
+  max-height: 0;
+  opacity: 0;
 }
 </style>

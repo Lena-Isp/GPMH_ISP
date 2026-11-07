@@ -18,12 +18,18 @@ const themeColorSvg = computed(() => {
   return $color.WHITE
 })
 
+const onOpen = () => {
+  if (menu.isDeskHide && route.path == '/'+locale.value) return true
+  if (route.path !== '/'+locale.value) return true
+}
 </script>
 
 <template>
   <header :class="[ 
     'header container-full', 
     `header--${theme}`,
+    {'header--line': onOpen()}
+    
   ]">
     <Logo class="header__logo" />
 
@@ -36,22 +42,20 @@ const themeColorSvg = computed(() => {
     >
       <IconSvg 
         :name="$iconName.SEARCH_ICON" 
-        :size="[$iconSize.SMALL_MOB, $iconSize.SMALL]"
+        :size="[$iconSize.SMALL_MOB, $iconSize.MEDIUM_SEARCH]"
         :color="themeColorSvg"
       />
     </NuxtLinkLocale>
     </div>
 
-    <Text
-      tag="a"
-      href="#"
-      class="header__lang hide-mobile"
-      to="/search"
-      :variant="$typographyVariant.T_SMALL_20"
-      :font="$font.TTSMALLS_REGULAR"
-      @click.prevent="reloadChangeLang"
-    > {{ $t('lang')}} </Text>
-
+    
+    <NuxtLinkLocale class="header__lang hide-mobile" to="/search">
+      <Text
+        :variant="$typographyVariant.T_SMALL_20"
+        :font="$font.TTSMALLS_REGULAR"
+        @click.prevent="reloadChangeLang"
+      >{{ $t('lang')}}</Text>
+    </NuxtLinkLocale>
     <MenuBurger class="header__burger" />
   </header>
 
@@ -116,7 +120,7 @@ const themeColorSvg = computed(() => {
   flex-shrink: 0;
   flex-basis: auto;
   text-align: right;
-  margin-right: em(38);
+  margin-right: em(40);
   line-height: 0;
   @include mq('desktop') {
     margin-right: calc(436/1920 * 100%);

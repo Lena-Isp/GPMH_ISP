@@ -18,6 +18,23 @@ const { data: result, error } = await useAsyncData(
   () => partnerStore.fetchPartnersBySlug(route.params.id)
 )
 
+//для корректного перехода по hash
+const scrollToHash = async() => {
+  if (!import.meta.client || !route.hash) return
+  
+  await nextTick()
+
+  const targetId = decodeURIComponent(route.hash.slice(1))
+  const target = document.getElementById(targetId)
+
+  if (!target) return
+
+  target.scrollIntoView({
+    behavior: 'smooth',
+    block: 'start'
+ })
+}
+
 //редирект для страницы, где нет английской версии
 if (result.value?.isRedirect) {
   await navigateTo(localePath('/business'), {
@@ -30,6 +47,8 @@ if (result.value?.isRedirect) {
 if (error.value) {
  throw error
 }
+
+onMounted(scrollToHash)
 </script>
 
 <template>
@@ -96,6 +115,29 @@ if (error.value) {
       />
     </template>
   </ContainerSplit>
+    <br /><br />
+    <br /><br />
+    <Text 
+      :variant="[$typographyVariant.T_H2_50_MOB, $typographyVariant.T_H2_100]"
+      :font="$font.MAREGRAPHE_REGULAR"
+    >Тематические каналы</Text>
+    <br /><br />
+    <br /><br />
+    <div v-for="item in currentPartners?.channels" :key="item.id"
+        :id="item?.slug" 
+        v-show="currentPartners?.channels"
+      >
+      <Text 
+        :variant="[$typographyVariant.T_BIG_24_MOB, $typographyVariant.T_BIG_36]"
+        :font="$font.TTSMALLS_REGULAR"
+      >{{item.name}} <br /></Text>
+      <Text 
+        :variant="[$typographyVariant.T_SMALL_16_MOB, $typographyVariant.T_SMALL_20]"
+        :font="$font.TTSMALLS_REGULAR"
+      >{{item.text}} <br /><br /></Text>
+    </div>
+    <br /><br />
+    <br /><br />
   <div>
     <Text 
       :variant="[$typographyVariant.T_H2_50_MOB, $typographyVariant.T_H2_100]"

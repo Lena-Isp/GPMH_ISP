@@ -267,10 +267,8 @@ export const useNewsStore = defineStore('media', () => {
   
       return data
     } catch (err) {
-      // currentPage не меняем — запрос можно повторить
       throw err
     } finally {
-      // Не меняем состояние загрузки более нового запроса
       if (requestId === initialRequestId) {
         isMoreLoading.value = false
       }

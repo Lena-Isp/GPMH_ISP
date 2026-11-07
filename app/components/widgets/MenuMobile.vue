@@ -9,20 +9,22 @@ const theme = computed(() => route.meta.theme || 'dark')
 <template>
   <Transition name="fade-slide">
     <div :class="`menu-mob-wrap menu-mob-wrap--${theme}`" v-if="menu.isOpen">
-      <NavNode
-        v-for="node in NAVIGATION" 
-        :key="node.id" 
-        :item="node"
-        mode="vertical"
-      />
-      <div class="menu-mob-item menu-mob-item--lang">
-        <Text
-          tag="a" 
-          href="#"
-          @click.prevent="reloadChangeLang"
-          :variant="$typographyVariant.T_MENU"
-          :font="$font.TTSMALLS_REGULAR"
-        > {{ $t('lang') }} </Text>
+      <div class="menu-mob-inner">
+        <NavNode
+          v-for="node in NAVIGATION" 
+          :key="node.id" 
+          :item="node"
+          mode="vertical"
+        />
+        <div class="menu-mob-item menu-mob-item--lang">
+          <Text
+            tag="a" 
+            href="#"
+            @click.prevent="reloadChangeLang"
+            :variant="$typographyVariant.T_MENU"
+            :font="$font.TTSMALLS_REGULAR"
+          > {{ $t('lang') }} </Text>
+        </div>
       </div>
     </div>
   </Transition>
@@ -35,7 +37,7 @@ const theme = computed(() => route.meta.theme || 'dark')
   left: 0;
   width: 100%;
   height: 100vh;
-  padding-top: em($header-height-mob + 62);
+  padding-top: em($header-height-mob);
   background-color: var(--color-BLACK);
   display: flex;
   flex-direction: column;
@@ -44,7 +46,7 @@ const theme = computed(() => route.meta.theme || 'dark')
   padding-left: em(35);
   padding-right: em(10);
   color: var(--color-WHITE);
-  overflow: auto;
+  overflow: hidden;
   &--light {
     color: var(--color-WHITE);
   }
@@ -54,6 +56,17 @@ const theme = computed(() => route.meta.theme || 'dark')
     display: none;
   }
 }
+.menu-mob-inner {
+  padding: em(40) 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 .menu-mob-item {
   &--lang {
     margin-top: em(160);
