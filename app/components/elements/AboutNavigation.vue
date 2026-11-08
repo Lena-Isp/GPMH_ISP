@@ -1,7 +1,7 @@
 <script setup>
   import { NAVIGATION } from '~/constants/navigation'
   
-  const aboutChannels = NAVIGATION.find(item => item.id === 3)?.channels ?? [];
+  const aboutChannels = NAVIGATION.find(item => item.id === 2)?.channels ?? [];
 </script>
 
 <template>
@@ -15,7 +15,7 @@
         tag="NuxtLinkLocale"
         :variant="[$typographyVariant.T_NORMAL_20_MOB, $typographyVariant.T_BIG_36 ]"
         :font="$font.TTSMALLS_REGULAR"
-        :to="item.slug"
+        :to="item.link"
         :target="item.external ? '_blank' : undefined"
         :rel="item.external ? 'noopener noreferrer' : undefined"
       >{{ $t(item.name) }}</Text>

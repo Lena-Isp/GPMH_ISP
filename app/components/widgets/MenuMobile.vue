@@ -1,5 +1,5 @@
 <script setup>
-import { NAVIGATION } from '~/constants/navigation'
+const { menuNavigation } = useNavigation()
 const { reloadChangeLang } = useLanguage()
 const menu = useMenuStore()
 const route = useRoute()
@@ -10,11 +10,13 @@ const theme = computed(() => route.meta.theme || 'dark')
   <Transition name="fade-slide">
     <div :class="`menu-mob-wrap menu-mob-wrap--${theme}`" v-if="menu.isOpen">
       <div class="menu-mob-inner">
+        <!--пункты меню-->
         <NavNode
-          v-for="node in NAVIGATION" 
+          v-for="node in menuNavigation" 
           :key="node.id" 
           :item="node"
         />
+        <!--end пункты меню-->
         <div class="menu-mob-item menu-mob-item--lang">
           <Text
             tag="a" 

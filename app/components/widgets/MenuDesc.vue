@@ -1,23 +1,11 @@
 <script setup>
-import { NAVIGATION } from '~/constants/navigation'
-
-const partnerStore = usePartnerStore()
+const { menuNavigation } = useNavigation()
 const menu = useMenuStore()
 const route = useRoute()
 const router = useRouter()
 const { locale } = useI18n();
 
 const theme = computed(() => route.meta.theme || 'dark')
-
-//Добавление партнеров в массив NAVIGATION
-const addsPartnerNav = (nav) => {
-  return nav.map((item, index)=> {
-    if (item.id == 1) item.channels = partnerStore?.categoriesWithAssets
-    return item
-  })
-}
-
-const partnerNav = computed(() => addsPartnerNav(NAVIGATION))
 
 const onOpen = () => {
   menu.isDeskHide = true
@@ -36,7 +24,7 @@ const isActiveLine = (item) => {
 
 const activeItemId = computed(() => {
   const currentPath = '/'+route?.name?.slice(0, -5)
-  return NAVIGATION.find(item => currentPath?.includes(item?.link))?.id
+  return menuNavigation.value.find(item => currentPath?.includes(item?.link))?.id
 })
 
 const currentPartnerId = computed(() => String(route.params.id || ''))
@@ -53,7 +41,7 @@ const containsCurrentPartner = (item) => {
 <template>
   <div :class="[`navigation navigation--${theme}`]" @mouseleave="onLeave">
     <div
-      v-for="navItem in partnerNav" 
+      v-for="navItem in menuNavigation" 
       :key="navItem.id"
       :class="['navigation__item', {'navigation__item--link-active': navItem.id === activeItemId }]"
       @mouseenter="onOpen"
