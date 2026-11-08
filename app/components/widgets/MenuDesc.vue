@@ -29,14 +29,14 @@ const onLeave = () => {
 
 const isActiveLine = (item) => {
   const currentPath = route.name
-  const itemPath = (item?.slug +'__'+locale?.value)?.slice(1)
+  const itemPath = (item?.link +'__'+locale?.value)?.slice(1)
   if (currentPath === itemPath) return true
   return false
 }
 
 const activeItemId = computed(() => {
   const currentPath = '/'+route?.name?.slice(0, -5)
-  return NAVIGATION.find(item => currentPath?.includes(item?.slug))?.id
+  return NAVIGATION.find(item => currentPath?.includes(item?.link))?.id
 })
 
 const currentPartnerId = computed(() => String(route.params.id || ''))
@@ -54,19 +54,18 @@ const containsCurrentPartner = (item) => {
   <div :class="[`navigation navigation--${theme}`]" @mouseleave="onLeave">
     <div
       v-for="navItem in partnerNav" 
-      :key="navItem.id" 
-      :item="navItem"
+      :key="navItem.id"
       :class="['navigation__item', {'navigation__item--link-active': navItem.id === activeItemId }]"
       @mouseenter="onOpen"
     >
       <Text
-        :to="navItem.slug"
-        :target="navItem.external ? '_blank' : undefined"
-        :rel="navItem.external ? 'noopener noreferrer' : undefined"
+        tag="NuxtLinkLocale"
+        :to="navItem?.link"
         :variant="$typographyVariant.T_LINKS_20"
         :font="$font.TTSMALLS_REGULAR"
-        tag="NuxtLinkLocale"
         class="navigation__link"
+        :target="navItem.external ? '_blank' : undefined"
+        :rel="navItem.external ? 'noopener noreferrer' : undefined"
       > {{ $t(navItem?.name) }}</Text>
 
       <!--блок появляющийся при наведении-->
@@ -76,8 +75,10 @@ const containsCurrentPartner = (item) => {
           :key="navItemDeep.id" 
         >
         <NuxtLinkLocale 
-          :to="navItemDeep.static ? navItemDeep.slug : `/business#${navItemDeep.slug}`"
+          :to="navItemDeep?.link"
           :active-class="navItemDeep.static ? 'router-link-active' : 'business-link-active'"
+          :target="navItemDeep?.external ? '_blank' : undefined"
+          :rel="navItemDeep?.external ? 'noopener noreferrer' : undefined"
           class="navigation__link-wrap"
         >
           <Text
@@ -85,6 +86,7 @@ const containsCurrentPartner = (item) => {
             :font="$font.TTSMALLS_REGULAR"
             :color="$color.GRAY_LINE"
             class="navigation__count"
+            v-if="navItemDeep.assetsCount"
           >{{ navItemDeep?.assetsCount }}</Text>
           <Text
             :variant="$typographyVariant.T_LINKS_20"
@@ -96,7 +98,6 @@ const containsCurrentPartner = (item) => {
         </template>
       </div>
       <!--end блок появляющийся при наведении-->
-
     </div>
   </div>
   <Teleport to="#teleports">

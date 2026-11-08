@@ -25,30 +25,24 @@ const onOpen = () => {
 </script>
 
 <template>
-  <header :class="[ 
-    'header container-full', 
-    `header--${theme}`,
-    {'header--line': onOpen()}
-    
-  ]">
+  <header :class="[`header container-full header--${theme}`, {'header--line': onOpen()}]">
     <Logo class="header__logo" />
 
     <MenuDesc />
     
     <div class="header__search">
-    <NuxtLinkLocale 
-      class="header__search-link" 
-      to="/search"
-    >
-      <IconSvg 
-        :name="$iconName.SEARCH_ICON" 
-        :size="[$iconSize.SMALL_MOB, $iconSize.MEDIUM_SEARCH]"
-        :color="themeColorSvg"
-      />
-    </NuxtLinkLocale>
+      <NuxtLinkLocale 
+        class="header__search-link" 
+        to="/search"
+      >
+        <IconSvg 
+          :name="$iconName.SEARCH_ICON" 
+          :size="[$iconSize.SMALL_MOB, $iconSize.MEDIUM_SEARCH]"
+          :color="themeColorSvg"
+        />
+      </NuxtLinkLocale>
     </div>
 
-    
     <NuxtLinkLocale class="header__lang hide-mobile" to="/search">
       <Text
         :variant="$typographyVariant.T_SMALL_20"

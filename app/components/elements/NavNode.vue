@@ -1,25 +1,19 @@
 <script setup>
 const props = defineProps({
   item: { type: Object, required: true },
-  depth: { type: Number, default: 0 }, // для определени уровеня вложенности
-  mode: { type: String, default: 'horizontal' }, // 'horizontal' или 'vertical'
-  classes: { type: String}, // 'horizontal' или 'vertical'
-  links: { type: String}, // 'horizontal' или 'vertical'
+  depth: { type: Number, default: 0 }, // для определени уровня вложенности
+  classes: { type: String},
+  links: { type: String},
 })
 
 const { locale } = useI18n()
-
 const route = useRoute()
-
 const menu = useMenuStore()
 
-const theme = computed(() => route.meta.theme || 'dark')
-
 const isOpenDepth = ref(false)
-
 const isOpenDepthDesc = ref(false)
 
-
+const theme = computed(() => route.meta.theme || 'dark')
 const currentPartnerId = computed(() => String(route.params.id || ''))
 
 const containsCurrentPartner = (item) => {
@@ -50,8 +44,8 @@ const currentPath = computed(() => {
 // Получаем реальный адрес пункта меню.
 const getItemPath = (item) => {
   if (item.external) return null
-  if (item.static || props.depth === 0) item.slug
-  return props.links || item.slug
+  if (item.static || props.depth === 0) item.link
+  return props.links || item.link
 }
 
 // Проверяем активность пункта меню.
@@ -90,71 +84,32 @@ const isActiveBranch = computed(() => {
 })
 
 const isActiveLink = computed(() => {
-  return props.depth > 0 && isActiveBranch.value
+  return isActiveBranch.value
 })
 
-const itemTo = computed(() => getItemPath(props.item))
-
-const getChildLink = (child) => {
-  if (child.external || child.static) {
-    return child.slug
-  }
-  if (props.depth > 1) {
-    return `${props.links}#${child.slug}`
-  }
-  if (props.depth > 0) {
-    return `/business/partner/${child.slug}`
-  }
-  return `/business#${child.slug}`
-}
-
 const toggleDepth = () => {
-  if (props.mode === 'vertical' && props.item.channels) {
+  if (props.item.channels) {
     isOpenDepth.value = !isOpenDepth.value
-  }
-}
-
-const setOverlay = (val) => {
-  isOpenDepthDesc.value = val
-}
-
-const onEnter = () => {
-  if (props.mode === 'horizontal' && props.item.channels) {
-    setOverlay(true)
-  }
-}
-
-const onLeave = (depth) => {
-  if (props.mode === 'horizontal' && depth === 0) {
-    setOverlay(false)
   }
 }
 </script>
 
 <template>
-  <div
+  <div 
+    class="nav-item"
     :class="[
-      depth > 0
-        ? `nav-item nav-item--depth-${depth + 1}`
-        : `nav-item nav-item--${theme} is-${mode}`,
-      {
-        'nav-item--active': depth === 0 && isActiveBranch
-      },
-    classes
+      depth > 0 && `nav-item--depth-${depth + 1}`,
+      classes
     ]"
     :style="{ paddingLeft: depth == 2 ? '46px' : false }"
-    @mouseenter="onEnter"
-    @mouseleave="onLeave(depth)"
   >
-    <!-- Ссылка (без вложенности) -->
+    <!-- Пункт меню(без выпдающего меню) -->
     <Text
       v-if="!item.channels"
       tag="NuxtLinkLocale"
-      :to="itemTo"
-      :class="[
-        'nav-link',
-        { 'nav-link--active': isActiveLink }
-      ]"
+      :to="item?.link"
+      :class="[ 'nav-link', { 'nav-link--active': isActiveBranch }]"
+      active-class="nav-link--router-active"
       :target="item.external ? '_blank' : undefined"
       :rel="item.external ? 'noopener noreferrer' : undefined"
       :variant="depth > 0
@@ -162,10 +117,11 @@ const onLeave = (depth) => {
         : $typographyVariant.T_MENU"
       :font="$font.TTSMALLS_REGULAR"
     >{{ $te(item.name) ? $t(item.name) : item.name }}</Text>
+    <!-- END Пункт меню(без выпдающего меню) -->
 
-   <!-- Подменю -->
     <template v-else>
-      <div class="nav-toogle">
+      <!-- Пункт меню(с выпдающим меню) -->
+      <div :class="`nav-toogle nav-toogle--depth-${depth}`">
         <div class="nav-toogle__block">
           <Text
             :variant="$typographyVariant.T_LINKS_20"
@@ -176,11 +132,8 @@ const onLeave = (depth) => {
           > {{ item?.assetsCount }}</Text>
           <Text
             tag="NuxtLinkLocale"
-            :to="itemTo"
-            :class="[
-              'nav-link',
-              { 'nav-link--active': isActiveLink }
-            ]"
+            :to="item?.link"
+            :class="['nav-link', { 'nav-link--active': isActiveBranch }]"
             :target="item.external ? '_blank' : undefined"
             :rel="item.external ? 'noopener noreferrer' : undefined"
             :variant="depth > 0
@@ -197,11 +150,13 @@ const onLeave = (depth) => {
           />
         </button>
       </div>
+      <!-- END пункт меню(с выпдающим меню) -->
+      <!-- выпдающее меню -->
       <Transition name="submenu">
         <div 
-          v-if="(mode === 'horizontal' && isOpenDepthDesc) || (mode === 'vertical' && isOpenDepth)"
-          :class="['nav-wrap', `nav-wrap--depth-${(depth+1) + 1}`]"
+          v-if="isOpenDepth"
           class="submenu-transition"
+          :class="['nav-wrap', `nav-wrap--depth-${(depth+1) + 1}`]"
         >
           <!-- РЕКУРСИЯ: Компонент вызывает сам себя -->
           <NavNode 
@@ -209,14 +164,7 @@ const onLeave = (depth) => {
             :key="child.id" 
             :item="child " 
             :depth="depth + 1"
-            :mode="mode"
-            :links="depth > 1 ? `${links}#${child.slug}` : 
-                    depth > 0
-                      ? `/business/partner/${child.slug}`
-                      : item.slug == '/business'
-                        ? `/business#${child?.slug}`
-                        : `${child?.slug}`
-            "
+            :links="child?.link"
             classes="channels-deep"
           />
           <NavNode
@@ -224,179 +172,91 @@ const onLeave = (depth) => {
             :key="child.id" 
             :item="child" 
             :depth="depth + 1"
-            :mode="mode"
-            :links="`/business/partner/${child?.slug}`"
-            classes="assetsDeep"
+            :links="child?.link"
+            classes="assets-deep"
           />
         </div>
       </Transition>
+      <!-- выпдающее меню -->
     </template>
-    <!-- End Подменю -->
   </div>
 </template>
 
 <style lang="scss" scoped>
-.is-horizontal.nav-item {
-  position: relative;
-  display: flex;
-  align-self: stretch;
-  align-items: center;
-  cursor: pointer;
-  overflow: hidden;
-  padding-left: em(15);
-  padding-right: em(15);
-   &::before {
-    content: "";
-    position: absolute;
-    left: em(15);
-    bottom: 0;
-    width: calc(100% - em(30));
-    height: em(6);
-    background-color: var(--color-C_2101);
-    transform: translateY(em(7)) scaleY(0);
-    transition: transform .3s ease-in-out;
-  }
-  &--active, &:hover {
-    overflow: visible;
-    &::before {
-      transform: translateY(0) scaleY(1);
+  .nav-item {
+    padding-top: em(30);
+    &:first-child {
+      padding-top: 0;
     }
-    .nav-wrap--depth-2 {
-      opacity: 1;
+    .nav-item {
+      padding-top: em(20);
     }
   }
-  &--light {
-    .nav-wrap--depth-2 {
-      color: var(--color-WHITE);
-    }
-  }
-  
-  //первая вложенность
-  .nav-wrap--depth-2 {
-    @include mq('desktop') {
-      position: absolute;
-      top: 100%;
-      left: 0;
-      width: max-content;
-      opacity: 0;
-      transition: opacity .3s ease-in-out;
-      padding-top: em(50);
-    }
-  }
-  .nav-item--depth-2 {
-    @include mq('desktop') {
-      padding-left: em(15)!important;
-      padding-bottom: em(22);
-      &:hover {
-        color: var(--color-C_2101);
-      }
-    }
-  }
-  //End первая вложенность
-}
 
-//стили для мобильного меню
-//отступы
-.is-vertical.nav-item {
-  padding-top: em(30);
-  &:first-child {
-    padding-top: 0;
-  }
-}
-.is-vertical .nav-item {
-  padding-top: em(20);
-}
-.is-vertical .nav-wrap {
-  //margin-bottom: em(15);
-}
-//end отступы
-
-.is-vertical {
   .nav-toogle {
     width: 100%;
     display: flex;
     align-items: center;
     justify-content: space-between;
   }
-}
-.nav-toogle__block {
-  display: flex;
-  align-items: flex-start;
-  gap: em(20);
-}
 
-.nav-toogle__block-numb {
-  width: 24px;
-}
-
-.nav-toogle-button {
-  display: inline-flex;
-  @include mq('desktop') {
-    display: none;
+  .nav-toogle__block {
+    display: flex;
+    align-items: flex-start;
+    gap: em(20);
   }
-}
-.arrow-rotated { 
-  display: inline-block; 
-  transition: transform .3s ease;
-  g {
-    stroke-width: 8px;
+
+  .nav-toogle__block-numb {
+    width: 24px;
   }
-}
-svg.arrow-rotated g {
-    stroke-width: 8px;
-}
 
-.arrow-rotated.is-rotated { 
-  transform: rotate(135deg); 
-}
-
-.assetsDeep, .channelsDeep {
-  position: relative;
-}
-
-.channels-deep > .nav-wrap {
-  @include mq('desktop') {
-    display: none;
-    position: absolute;
-    left: 0;
-    top: em(27);
-    z-index: 5;
-    width: 300px;
-    background-color: whitesmoke;
+  .nav-toogle-button {
+    display: inline-flex;
+    @include mq('desktop') {
+      display: none;
+    }
   }
-}
 
-.assetsDeep > .nav-wrap {
-  @include mq('desktop') {
-    display: none;
-    position: absolute;
-    left: 100%;
-    top: em(25);
-    z-index: 5;
-    width: 300px;
-    background-color: whitesmoke;
+  .arrow-rotated { 
+    display: inline-block; 
+    transition: transform .3s ease;
   }
-}
 
-.submenu-enter-active,.submenu-leave-active {
-  max-height: 500px;
-  opacity: 1;
-  overflow: hidden;
-  transition:
-  max-height 0.35s ease,
-  opacity 0.25s ease;
-}
+  .arrow-rotated.is-rotated { 
+    transform: rotate(135deg); 
+  }
 
-.submenu-enter-from, .submenu-leave-to {
-  max-height: 0;
-  opacity: 0;
-}
+  .assets-deep, .channelsDeep {
+    position: relative;
+  }
 
-.nav-item--active > .nav-toogle .nav-link, .router-link-active {
-  border-bottom: 2px solid var(--color-C_2101);
-}
+  .channels-deep > .nav-wrap, .assets-deep > .nav-wrap  {
+    @include mq('desktop') {
+      display: none;
+    }
+  }
 
-:deep(.nav-link--active) {
-  color: var(--color-C_2101);
-}
+  .submenu-enter-active,.submenu-leave-active {
+    max-height: 500px;
+    opacity: 1;
+    overflow: hidden;
+    transition:
+    max-height 0.35s ease,
+    opacity 0.25s ease;
+  }
+
+  .submenu-enter-from, .submenu-leave-to {
+    max-height: 0;
+    opacity: 0;
+  }
+
+  :deep(.nav-link--active) {
+    color: var(--color-C_2101);
+  }
+
+  .nav-toogle--depth-0:deep(.nav-link--active) {
+    color: var(--color-WHITE);
+    border-bottom: 2px solid var(--color-C_2101);
+  }
+
 </style>

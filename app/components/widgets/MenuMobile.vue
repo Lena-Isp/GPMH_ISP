@@ -14,7 +14,6 @@ const theme = computed(() => route.meta.theme || 'dark')
           v-for="node in NAVIGATION" 
           :key="node.id" 
           :item="node"
-          mode="vertical"
         />
         <div class="menu-mob-item menu-mob-item--lang">
           <Text

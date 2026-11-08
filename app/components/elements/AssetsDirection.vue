@@ -47,12 +47,12 @@ const fullItems = computed(() => {
       class="grid-item" 
       :class="[`grid-item--${value.slug}`, { 'is-empty': value?.isEmpty }]"
       :to="variant == 'bg' 
-        ? !value?.isEmpty && `#${value.slug}` || ''
-        : !value?.isEmpty && localePath({
-                              path: `/business/partner/${assetsDeepSlug || value.slug}`, 
-                              hash: assetsDeepSlug ? `#${value.slug}` : ''
-                             }) || ''
-      "
+            ? !value?.isEmpty && `#${value.slug}` || ''
+            : !value?.isEmpty && localePath({
+                                  path: `/business/partner/${assetsDeepSlug || value.slug}`, 
+                                  hash: assetsDeepSlug ? `#${value.slug}` : ''
+                                }) || ''
+          "
     >
       <Text
         tag="span"

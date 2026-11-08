@@ -59,12 +59,26 @@ export const usePartnerStore = defineStore('partner', () => {
   }
 
   //---------------------------------------------- GETTERS ---------------------------------------------------------
+  const mapAssetLinks = (assets, parentSlug = null) => {
+    return assets.map(asset => {
+      const rootSlug = parentSlug || asset.slug
+      return {
+        ...asset,
+        link: parentSlug
+          ? `/business/partner/${parentSlug}#${asset.slug}`
+          : `/business/partner/${asset.slug}`,
+        channels: asset.channels?.length
+          ? mapAssetLinks(asset.channels, rootSlug)
+          : []
+      }
+    })
+  }
   const categoriesWithAssets = computed(() => {
-  const rawCategories = Array.isArray(categoriesData.value) ? categoriesData.value : []
-  const rawAssets = Array.isArray(assetsData.value) ? assetsData.value : []
-  
-  const assetsByCategory = {}
-  const assetsDeepByCategory = {}
+    const rawCategories = Array.isArray(categoriesData.value) ? categoriesData.value : []
+    const rawAssets = Array.isArray(assetsData.value) ? assetsData.value : []
+    
+    const assetsByCategory = {}
+    const assetsDeepByCategory = {}
     
     // //распределение активов по категориям (читаемый вариант)
     // const categoryMap = rawCategories.map(catItem => {
@@ -111,12 +125,20 @@ export const usePartnerStore = defineStore('partner', () => {
 
     //собираем общий массив
     const categoryMap = rawCategories.map(catItem => ({
-      ...catItem,
-      channels: assetsByCategory[catItem.slug] || [],
-      assetsDeep: assetsDeepByCategory[catItem.slug] || [],
-      assetsCount: assetsByCategory[catItem.slug]?.length + (totalChannels(assetsDeepByCategory[catItem?.slug]) || 0)
+      ...catItem, 
+      link: `/business#${catItem.slug}`, 
+      channels: mapAssetLinks(
+        assetsByCategory[catItem.slug] || []     
+      ),
+      assetsDeep: mapAssetLinks(
+        assetsDeepByCategory[catItem.slug] || []
+      ),
+      assetsCount: 
+        (assetsByCategory[catItem.slug]?.length || 0) + 
+        (totalChannels(assetsDeepByCategory[catItem.slug]) || 0)
     }))
-    return Object.values(categoryMap)
+
+    return categoryMap
   })
 
   return {
