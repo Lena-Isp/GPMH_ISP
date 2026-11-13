@@ -23,6 +23,7 @@ export const iconName = {
   ARROW_GALLERY_LEFT: "arrow-gallery-left",
   ARROW_GALLERY_RIGHT: "arrow-gallery-right",
   SEARCH_ICON: "search-icon",
+  SEARCH: "search",
   //иконки для плеера
   PLAY: "play",
   STOP: "stop",
@@ -50,6 +51,7 @@ export const iconSize = {
   SMALL_PREV: "small-prev", //20*10
   MEDIUM_SEARCH: "medium-search", //30*30
   LOGO_SIZE: "logo-size", //216*auto (для десктопного меню)
+  UP_BUTTON: "up-button", //60x60
   //NEW_DESIGN
   NEW_MEDIUM_MOB: "new-medium--mob", //32*32
   NEW_MEDIUM: "new-medium", //32*32

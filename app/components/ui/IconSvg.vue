@@ -127,15 +127,21 @@ const props = defineProps({
     width: em(20);
     height: em(10);
   }
+}
+.up-button {
+  @include mq('desktop') {
+    width: em(60);
+    height: em(60);
   }
+}
   
-  //доп размеры
-  .logo-size { //для иконки на главной
-    width: auto;
-    height: em($header-height-desc);
-  }
-  //для плагина
-  .nuxt-icon {
-    margin-bottom: 0;
-  }
+//доп размеры
+.logo-size { //для иконки на главной
+  width: auto;
+  height: em($header-height-desc);
+}
+//для плагина
+.nuxt-icon {
+  margin-bottom: 0;
+}
 </style>

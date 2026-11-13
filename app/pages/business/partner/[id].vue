@@ -171,6 +171,7 @@ onMounted(scrollToHash)
   .business-page__preview-bg {
     position: relative;
     min-height: em(540);
+    background-color: rgba($color: #121419, $alpha: .9);
     @include mq('desktop') {
       min-height: em(700);
     }

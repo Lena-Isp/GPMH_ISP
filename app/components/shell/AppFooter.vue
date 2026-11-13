@@ -1,13 +1,11 @@
 <script setup>
   import { NAVIGATION } from '~/constants/navigation'
   const { locale } = useI18n();
-
   const siteStore = useSiteStore()
  
-  // Функция разворачивает channels (только для about)
   const expandAboutChannels = (nav) => {
     return nav.flatMap((item) => {
-      if (item.id === 3 && item.channels) {
+      if (item.id === 2 && item.channels) {
         const { channels, ...rest } = item
         return [rest, ...channels]
       }
@@ -15,7 +13,6 @@
     })
   }
 
-  //для каждой колонки перечисляем какие пункты должны быть
   const columnNames = [
     ['menu.business', 'menu.media', 'menu.about'],               
     ['menu.aboutCsr', 'menu.aboutPriorities', 'menu.aboutHistory'],
@@ -28,7 +25,8 @@
   )
 </script>
 <template>
-  <footer class="footer container-full"
+  <footer 
+    class="footer container-full"
     itemscope
     itemtype="http://schema.org/WPFooter"
   >
@@ -42,7 +40,7 @@
             v-for="item in column" 
             :key="item.id"
             tag="NuxtLinkLocale"
-            :to="item.slug"
+            :to="item.link"
             class="footer__line"
             :variant="[$typographyVariant.T_NORMAL_20_MOB, $typographyVariant.T_SMALL_20]"
             :font="$font.TTSMALLS_REGULAR"
@@ -89,17 +87,18 @@
           "
           target="_blank"
           class="footer__line footer__line--copyright-link"
-        >Политика обработки персональных данных</Text>
+        >{{ $t('footer.privacy') }}</Text>
         <Text
           :variant="[$typographyVariant.T_SMALL_16_MOB, $typographyVariant.T_SUPER_SMALL_16]"
           :font="$font.TTSMALLS_REGULAR"
           class="footer__line footer__line--copyright-text"
         >
         <span class="footer__сopyright-icon">©</span>
-        АО «Газпром-Медиа Холдинг» Все права защищены
+        {{ $t('footer.copyright') }}
         </Text>
       </div>
     </div>
+    <UpButton />
   </footer>
 </template>
 <style lang="scss" scoped>
@@ -157,9 +156,13 @@
 
 .footer__cell {
   width: calc(50% - em(15));
+  display: flex;
+  flex-direction: column;
+  gap: em(10);
   @include mq('desktop') {
     width: auto;
     margin-right: 8.2%;
+    gap: em(20);
   }
 } 
 

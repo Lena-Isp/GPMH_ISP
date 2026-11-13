@@ -31,7 +31,7 @@ const IS_TV = "televidenie"
         v-for="assetItem in itemCategory.channels || []"
         :key="assetItem.id"
         :name="assetItem.name"
-        :link="`/business/partner/${assetItem.slug}`"
+        :link="assetItem.link"
         :hoverColor="$color.C_285"
       />
     </div>
@@ -50,7 +50,7 @@ const IS_TV = "televidenie"
           v-for="channelsItem in assetsDeepItem.channels || []"
           :key="channelsItem.id"
           :name="channelsItem.name"
-          :link="`/business/partner/${channelsItem.slug}`"
+          :link="channelsItem.link"
           :hoverColor="$color.C_285"
         />
       </div>

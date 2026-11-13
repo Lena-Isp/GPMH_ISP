@@ -15,7 +15,7 @@
 <template>
   <div class="search-input">
     <SearchFormInput
-      :placeholder="'Введите ваш запрос'"
+      placeholder="Введите ваш запрос"
     />
   </div>
 

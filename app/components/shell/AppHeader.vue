@@ -2,14 +2,11 @@
 import { NAVIGATION } from '~/constants/navigation'
 
 const { locale } = useI18n();
-
-const route = useRoute()
-
 const { reloadChangeLang } = useLanguage()
-
+const route = useRoute()
 const menu = useMenuStore()
-
 const theme = computed(() => route.meta.theme || 'dark')
+const { isVisibleSearch, openModal, closeModal } = useSearchModal()
 
 const themeColorSvg = computed(() => {
   const { $color } = useNuxtApp() //для использования в computed
@@ -30,31 +27,28 @@ const onOpen = () => {
 
     <MenuDesc />
     
-    <div class="header__search">
-      <NuxtLinkLocale 
-        class="header__search-link" 
-        to="/search"
-      >
-        <IconSvg 
-          :name="$iconName.SEARCH_ICON" 
-          :size="[$iconSize.SMALL_MOB, $iconSize.MEDIUM_SEARCH]"
-          :color="themeColorSvg"
-        />
-      </NuxtLinkLocale>
+    <div class="header__search " @click="openModal">
+      <IconSvg
+        :name="$iconName.SEARCH_ICON" 
+        :size="[$iconSize.SMALL_MOB, $iconSize.MEDIUM_SEARCH]"
+        :color="themeColorSvg"
+      />
     </div>
 
-    <NuxtLinkLocale class="header__lang hide-mobile" to="/search">
+    <button class="header__lang hide-mobile" @click="reloadChangeLang">
       <Text
         :variant="$typographyVariant.T_SMALL_20"
         :font="$font.TTSMALLS_REGULAR"
-        @click.prevent="reloadChangeLang"
-      >{{ $t('lang')}}</Text>
-    </NuxtLinkLocale>
+      >{{ $t('lang') }}</Text>
+    </button>
     <MenuBurger class="header__burger" />
   </header>
 
   <Teleport to="#teleports">
     <MenuMobile />
+  </Teleport>
+  <Teleport to="#teleports">
+    <SearchModal />
   </Teleport>
 </template>
 
@@ -104,6 +98,11 @@ const onOpen = () => {
 
 
 .header__lang {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: inherit;
   @include mq('desktop') {
     margin-right: em(30);
   }
@@ -116,6 +115,7 @@ const onOpen = () => {
   text-align: right;
   margin-right: em(40);
   line-height: 0;
+  cursor: pointer;
   @include mq('desktop') {
     margin-right: calc(436/1920 * 100%);
     line-height: auto;

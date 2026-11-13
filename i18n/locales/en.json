@@ -29,13 +29,19 @@
     "name": "About us"
   },
   "career": {
-    "name": "Page - About"
+    "name": "Career",
+    "next": "History",
+    "news": "News",
+    "newsLink": "All news", 
+    "questions": "Questions and answers",
+    "buttonOpen": "Expand", 
+    "buttonClose": "Close"
   },
   "history": {
     "name": "History"
   },
   "strategy": {
-    "name": "Page - Strategy"
+    "name": "Strategic priorities"
   },
   "business": {
     "header": "Holding assets"
@@ -64,5 +70,9 @@
   },
   "pinia": {
     "partners": "Federal TV channels"
+  },
+  "footer": {
+    "privacy": "Personal Data Processing Policy",
+    "copyright": "JSC «Gazprom-Media Holding» All rights reserved"
   }
 }

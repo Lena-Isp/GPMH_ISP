@@ -5,7 +5,7 @@
 Использование в компонентaх:
 <Text
   tag="h1"
-  :variant="$typographyVariant.T_NORMAL_30"
+  :variant="[$typographyVariant.T_NORMAL_20_MOB, $typographyVariant.T_NORMAL_30]"
   :font="$font.TTSMALLS_REGULAR"
   :color="$color.WHITE"
 >{{ $t('home.index') }}</Text>

@@ -2,7 +2,7 @@
 //Загрузка данных для видео на главной и блок интро
 const siteStore = useSiteStore()
 const { homePageData } = storeToRefs(siteStore)
-const { data } = await useAsyncData('homepageDataInit', () => siteStore.fetchHomepage())
+await useAsyncData('homepageDataInit', () => siteStore.fetchHomepage())
 // Загрузка данных для первых 12 новостей
 const newsStore = useNewsStore()
 const { newsListSlider } = storeToRefs(newsStore)

@@ -1,7 +1,10 @@
 <script setup>
 const props = defineProps({
-  headerName: String,
+  headerName: String,  
+  headerHtml: String, // HTML для заголовка
+  contentHtml: String, // HTML для контента внутри аккордеона
   number: Number,
+  career: Boolean
 });
 
 const isOpen = ref(false);
@@ -9,26 +12,35 @@ const isOpen = ref(false);
 const openAccordion = () => {
   isOpen.value = !isOpen.value;
 };
+
 </script>
 
 <template>
 <div :class="['accordion', { 'accordion--active': isOpen }]" @click="openAccordion">
   <div class="accordion__header">
-    <div class="accordion__header-numb">
+    <div 
+      class="accordion__header-numb" 
+      v-if="headerName"
+    >
       <Text
         :variant="[$typographyVariant.T_SUPER_BIG_30_MOB, $typographyVariant.T_SUPER_BIG_60]"
         :font="$font.TTSMALLS_MEDIUM"
         :color="$color.WHITE"
       >  {{ number }} </Text>
     </div>
+    <!-- пропс :html -->
+    <div v-else class="accordion__header-text-block" v-html="headerHtml" />
+    <!-- end пропс :html -->
     <Text
+      v-if="number"
       class="accordion__header-text"
       :variant="[$typographyVariant.T_SUPER_BIG_30_MOB, $typographyVariant.T_SUPER_BIG_60]"
       :font="$font.TTSMALLS_MEDIUM"
       :color="$color.WHITE"
     >  {{ headerName }} </Text>
-    <IconSvg
+    <IconSvg 
       class="accordion__icon accordion__icon--down"
+      :class="{'accordion__icon--career': career}"
       :name="$iconName.ARROW_DOWN"
       :size="[$iconSize.NEW_MEDIUM_MOB, $iconSize.LARGE]"
     />
@@ -48,11 +60,13 @@ const openAccordion = () => {
 
 <style lang="scss" scoped>
 .accordion {
-  border-top: 1px solid var(--color-GRAY_LINE);
-  border-bottom: 1px solid var(--color-GRAY_LINE);
+  border-top: 1px solid var(--color-WHITE_LINE);
   cursor: pointer;
   padding: em(40) 0;
   position: relative;
+  &:last-child {
+    border-bottom: 1px solid var(--color-WHITE_LINE);
+  }
   
   &--active {
     .accordion__content {
@@ -71,6 +85,14 @@ const openAccordion = () => {
       opacity: 1;
       right: em(0);
     }
+    .accordion__icon--career {
+      @include mq('desktop') {
+        right: em(0);
+        width: em(80);
+        height: em(80);
+      }
+    }
+    
   }
 }
 
@@ -105,7 +127,7 @@ const openAccordion = () => {
   top: 50%;
   transform: translateY(-50%);
   right: 0;
-  transition: right .6s, opacity .4s;
+  transition: right .6s, opacity .4s, width .6s, height .6s;
 
   &--down {
     opacity: 1;
@@ -115,9 +137,16 @@ const openAccordion = () => {
       right: em(40);
     }
   }
-
+  
   &--close {
     opacity: 0;
+  }
+
+  &--career {
+    opacity: 1;
+    right: em(0);
+    width: em(40);
+    height: em(40);
   }
 
 }

@@ -4,6 +4,7 @@ export const useSiteStore = defineStore('site', () => {
   //---------------------------------------------- STATE ---------------------------------------------------------
   const settingsData = ref(null)
   const homePageData = ref(null)
+  const strategyPageData= ref(null)
 
   //---------------------------------------------- ACTIONS ---------------------------------------------------------
   async function fetchSettings() {
@@ -19,6 +20,14 @@ export const useSiteStore = defineStore('site', () => {
     const response = await get('/pages/homepage')
     const payload = response?.data || response
     homePageData.value = payload
+    return payload
+  }
+
+  async function fetchStrategy() {
+    if (strategyPageData?.value) return strategyPageData?.value
+    const response = await get('/pages/strategy')
+    const payload = response?.data || response
+    strategyPageData.value = payload
     return payload
   }
   
@@ -47,7 +56,9 @@ export const useSiteStore = defineStore('site', () => {
     settingsData,
     homePageData,
     socialNetworks,
+    strategyPageData,
     fetchSettings,
-    fetchHomepage
+    fetchHomepage, 
+    fetchStrategy
   }
 })

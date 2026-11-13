@@ -44,7 +44,7 @@ const currentPath = computed(() => {
 // Получаем реальный адрес пункта меню.
 const getItemPath = (item) => {
   if (item.external) return null
-  if (item.static || props.depth === 0) item.link
+  if (item.static || props?.depth === 0) item.link
   return props.links || item.link
 }
 
@@ -77,7 +77,7 @@ const isItemActive = (item) => {
 const isActiveBranch = computed(() => {
   if (isItemActive(props.item)) return true
   // Проверяем категорию и её вложенные элементы.
-  if (props.depth === 1 && currentPartnerId.value) {
+  if (props?.depth === 1 && currentPartnerId.value) {
     return containsCurrentPartner(props.item)
   }
   return false
@@ -95,12 +95,8 @@ const toggleDepth = () => {
 </script>
 
 <template>
-  <div 
-    class="nav-item"
-    :class="[
-      depth > 0 && `nav-item--depth-${depth + 1}`,
-      classes
-    ]"
+  <div
+    :class="[`nav-item nav-item--depth-${depth + 1}`, classes]"
     :style="{ paddingLeft: depth == 2 ? '46px' : false }"
   >
     <!-- Пункт меню(без выпдающего меню) -->
@@ -108,32 +104,39 @@ const toggleDepth = () => {
       v-if="!item.channels"
       tag="NuxtLinkLocale"
       :to="item?.link"
-      :class="[ 'nav-link', { 'nav-link--active': isActiveBranch }]"
-      active-class="nav-link--router-active"
-      :target="item.external ? '_blank' : undefined"
-      :rel="item.external ? 'noopener noreferrer' : undefined"
       :variant="depth > 0
         ? $typographyVariant.T_LINKS_20
         : $typographyVariant.T_MENU"
       :font="$font.TTSMALLS_REGULAR"
+      class="nav-link"
+      :class="depth == 0 
+        ?  { 'nav-link--active': isActiveBranch }
+        :  { 'nav-link--active-depth': isActiveBranch }
+      "
+      :target="item.external ? '_blank' : undefined"
+      :rel="item.external ? 'noopener noreferrer' : undefined"
     >{{ $te(item.name) ? $t(item.name) : item.name }}</Text>
     <!-- END Пункт меню(без выпдающего меню) -->
 
     <template v-else>
       <!-- Пункт меню(с выпдающим меню) -->
-      <div :class="`nav-toogle nav-toogle--depth-${depth}`">
+      <div :class="`nav-toogle`">
         <div class="nav-toogle__block">
           <Text
+            class="nav-toogle__block-numb"
             :variant="$typographyVariant.T_LINKS_20"
             :font="$font.TTSMALLS_REGULAR"
             :color="$color.GRAY_LINE"
-            v-if="depth == 1"
-            class="nav-toogle__block-numb"
+            v-if="item?.assetsCount"
           > {{ item?.assetsCount }}</Text>
           <Text
             tag="NuxtLinkLocale"
             :to="item?.link"
-            :class="['nav-link', { 'nav-link--active': isActiveBranch }]"
+            class="nav-link"
+            :class="depth == 0 
+              ?  { 'nav-link--active': isActiveBranch }
+              :  { 'nav-link--active-depth': isActiveBranch }
+            "
             :target="item.external ? '_blank' : undefined"
             :rel="item.external ? 'noopener noreferrer' : undefined"
             :variant="depth > 0
@@ -155,8 +158,7 @@ const toggleDepth = () => {
       <Transition name="submenu">
         <div 
           v-if="isOpenDepth"
-          class="submenu-transition"
-          :class="['nav-wrap', `nav-wrap--depth-${(depth+1) + 1}`]"
+          class="nav-wrap submenu-transition"
         >
           <!-- РЕКУРСИЯ: Компонент вызывает сам себя -->
           <NavNode 
@@ -183,12 +185,11 @@ const toggleDepth = () => {
 </template>
 
 <style lang="scss" scoped>
-  .nav-item {
-    padding-top: em(30);
-    &:first-child {
-      padding-top: 0;
-    }
-    .nav-item {
+  .nav-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: em(20);
+    .nav-item:first-child {
       padding-top: em(20);
     }
   }
@@ -205,6 +206,16 @@ const toggleDepth = () => {
     align-items: flex-start;
     gap: em(20);
   }
+  
+  //стили для активных ссылок
+  .nav-link--active {
+    color: var(--color-WHITE);
+    border-bottom: 2px solid var(--color-C_2101);
+  }
+  .nav-link--active-depth {
+    color: var(--color-C_2101);
+  }
+  //end стили для активных ссылок
 
   .nav-toogle__block-numb {
     width: 24px;
@@ -220,13 +231,13 @@ const toggleDepth = () => {
   .arrow-rotated { 
     display: inline-block; 
     transition: transform .3s ease;
+
+    &.is-rotated { 
+      transform: rotate(135deg); 
+    }
   }
 
-  .arrow-rotated.is-rotated { 
-    transform: rotate(135deg); 
-  }
-
-  .assets-deep, .channelsDeep {
+  .assets-deep, .channels-deep {
     position: relative;
   }
 
@@ -236,6 +247,7 @@ const toggleDepth = () => {
     }
   }
 
+  //Анимация
   .submenu-enter-active,.submenu-leave-active {
     max-height: 500px;
     opacity: 1;
@@ -248,15 +260,6 @@ const toggleDepth = () => {
   .submenu-enter-from, .submenu-leave-to {
     max-height: 0;
     opacity: 0;
-  }
-
-  :deep(.nav-link--active) {
-    color: var(--color-C_2101);
-  }
-
-  .nav-toogle--depth-0:deep(.nav-link--active) {
-    color: var(--color-WHITE);
-    border-bottom: 2px solid var(--color-C_2101);
   }
 
 </style>

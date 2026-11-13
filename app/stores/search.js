@@ -10,7 +10,7 @@ export const useSearchStore = defineStore('search', () => {
 
   const currentPage = ref(1)
   const total = ref(0)
-  const perPage = ref(1)
+  const perPage = ref(3)
   const loading = ref(false)
 
   const lastPage = computed(() => {

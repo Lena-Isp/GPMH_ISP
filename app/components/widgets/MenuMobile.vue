@@ -63,6 +63,9 @@ const theme = computed(() => route.meta.theme || 'dark')
   overflow-x: hidden;
   scrollbar-width: none;
   -ms-overflow-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: em(30);
   &::-webkit-scrollbar {
     display: none;
   }

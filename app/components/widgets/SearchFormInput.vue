@@ -1,111 +1,125 @@
 <script setup>
 const route = useRoute()
 const router = useRouter()
+const localePath = useLocalePath()
 
 const props = defineProps({
   placeholder: {
     type: String,
   },
+  typemodal: {
+    type: Boolean,
+    default: false
+  },
 });
 
-const { getFormatted } = useFormattedDate();
+const { getFormatted } = useFormattedDate()
+const { isVisibleSearch, openModal, closeModal } = useSearchModal()
 
-const search = ref(route.query.q || '');
+const search = ref(route.query.q || '')
 
 const handleSearch = () => {
-  const query = {...route.query}
-  query.q = search.value
-  router.push({query})
-};
+  const currentQuery = { ...route.query }
+  currentQuery.q = search.value 
+
+  if (!search.value) {
+    delete currentQuery.q
+  }
+
+  router.push({
+    path: localePath('search'),
+    query: currentQuery
+  })
+
+  closeModal()
+}
+
+const closeSearch = () => {
+  router.push({ path: localePath('index') })
+}
 </script>
 
 <template>
-  <form class="search-page__form" @submit.prevent="handleSearch">
+  <form 
+    class="search-form" 
+    @submit.prevent="handleSearch"
+  >
     <input
-      class="search-page__input"
+      class="search-form__input"
       type="text"
       :placeholder="placeholder"
       v-model="search"
+      name="search-input"
     />
-    <div class="search-page__close">
-      <div class="search-page__close-wrap">
-        <NuxtLinkLocale to="/">
-          <IconSvg
-            :name="$iconName.CROSS" 
-            :size="[$iconSize.SMALL, $iconSize.SMALL_MOB]"
-            :color="$color.WHITE"
-          />
-        </NuxtLinkLocale>
-      </div>
-    </div>
+    <button 
+      type="button"
+      class="search-form__button"
+      to="/"
+      @click="typemodal ? handleSearch() : closeSearch()" 
+    >
+      <IconSvg
+        v-if="typemodal"
+        :name="$iconName.SEARCH"
+        :size="[$iconSize.MEDIUM_MOB, $iconSize.UP_BUTTON]"
+        :color="$color.WHITE"
+      />
+      <IconSvg
+        v-else
+        :name="$iconName.CROSS" 
+        :size="[$iconSize.MEDIUM, $iconSize.MEDIUM_MOB]"
+      />
+    </button>
   </form>
 </template>
 
 <style lang="scss" scoped>
-  .search-page {
+  .search-form {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(#fff, .5);
     position: relative;
-    margin-top: em(92);
-    font-family: 'TTSmallsRegular', Arial, sans-serif;
+    padding-bottom: em(10);
   }
-
-  .search-page__wrap {
-    position: relative;
-    overflow: hidden;
-    padding-top: em(92);
-    @include mq('desktop') {
-      padding-top: em(132);
-    }
-  }
-
-  .search-page__form {
-    padding-right: em(40);
-    border-bottom: 1px solid var(--color-GRAY_LINE);
-    position: relative;
-  }
-
-  .search-page__input {
+  
+  .search-form__input {
     width: 100%;
-    color: white;
+    color: var(--color-WHITE);
     padding: 0;
     background: transparent;
     border: none;
     border-radius: 0;
     position: relative;
     box-shadow: none !important;
-    font-family: 'TTSmallsMedium', Arial, sans-serif;
     font-size: em(30);
-    line-height: em(40);
+    line-height: 100%;
+    font-family: var(--font-ttsmalls-regular);
+    margin-right: em(4);
     @include mq('desktop') {
       font-size: em(60);
       line-height: 100%;
+      margin-right: 0;
     }
+    &::placeholder {
+      color: rgba(#fff, 0.5);
+      opacity: 1;
+    }
+    &:focus {
+      color: var(--color-WHITE);
+      outline: none;
+    }
+    // &:disabled {
+    //   background-color: #e2e8f0;
+    //   color: #718096;
+    //   cursor: not-allowed;
+    // }
   }
 
-  .search-page__close {
-    position: absolute;
-    display: block;
-    left: auto;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    margin: auto;
-    z-index: 0;
-    svg {
-      width: em(40);
-      height: em(40);
-      rect {
-        width: 1px;
-        fill: var(--color-C_2101)
-      }
-    }
-  }
-
-  .search-page__close-wrap {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
+  .search-form__button {
+    display: inline-block;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
   }
 </style>

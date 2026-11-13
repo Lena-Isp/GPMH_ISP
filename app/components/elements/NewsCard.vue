@@ -121,7 +121,6 @@ const imagePriority = computed(() => {
 
 .news-card__date {
   margin-bottom: em(10);
-
   @include mq('desktop') {
     margin-bottom: em(24);
   }
@@ -129,9 +128,8 @@ const imagePriority = computed(() => {
 
 .news-card__text {
   margin-bottom: em(50);
-
   @include mq('desktop') {
-    margin-bottom: em(92);
+    margin-bottom: em(90);
   }
 }
 </style>

@@ -2,7 +2,7 @@
   Использование в компоненте:
   <Text
     tag="h1"
-    :variant="$typographyVariant.T_H1_150"
+    :variant="[$typographyVariant.T_H1_55_MOB, $typographyVariant.T_H1_150]"
     :font="$font.MAREGRAPHE_REGULAR"
   > {{ $t('home.index') }}</Text>
 -->
@@ -25,7 +25,6 @@ const props = defineProps({
     v-if="tag === 'NuxtLinkLocale'"
     :to="to"
     :class="variant"
-    v-bind="$attrs"
     :style="{
       color: color,
       'font-family': font,
